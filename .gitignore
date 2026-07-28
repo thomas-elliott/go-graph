@@ -1,0 +1,22 @@
+# Binaries
+/k6
+*.exe
+bin/
+dist/
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Env / local
+.env
+*.local
+
+# Editor
+.idea/
+.vscode/
+.DS_Store
+
+# Local data files
+local/

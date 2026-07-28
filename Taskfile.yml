@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  run:
+    desc: Run the example
+    cmds:
+      - go run ./cmd/example
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build everything
+    cmds:
+      - go build ./...
+
+  tidy:
+    desc: Tidy the module
+    cmds:
+      - go mod tidy
