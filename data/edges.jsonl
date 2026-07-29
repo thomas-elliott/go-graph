@@ -1,0 +1,272 @@
+{"from": "Antwerp", "to": "Antwerp (province)", "type": "link", "properties": {"count": 1}}
+{"from": "Antwerp", "to": "Antwerp (province)", "type": "part_of"}
+{"from": "Antwerp", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "Antwerp", "to": "Bruges", "type": "link", "properties": {"count": 2, "sections": ["Go next"]}}
+{"from": "Antwerp", "to": "Brussels", "type": "link", "properties": {"count": 2, "sections": ["Go next"]}}
+{"from": "Antwerp", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Antwerp", "to": "Ghent", "type": "link", "properties": {"count": 2, "sections": ["Go next"]}}
+{"from": "Antwerp", "to": "Knokke-Heist", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Antwerp", "to": "Leuven", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Antwerp", "to": "poi:Antwerp#0", "type": "has_poi"}
+{"from": "Antwerp", "to": "poi:Antwerp#1", "type": "has_poi"}
+{"from": "Antwerp", "to": "poi:Antwerp#2", "type": "has_poi"}
+{"from": "Antwerp", "to": "poi:Antwerp#3", "type": "has_poi"}
+{"from": "Antwerp", "to": "poi:Antwerp#4", "type": "has_poi"}
+{"from": "Antwerp (province)", "to": "Antwerp", "type": "link", "properties": {"count": 1, "sections": ["Cities"]}}
+{"from": "Antwerp (province)", "to": "Belgium", "type": "link", "properties": {"count": 2}}
+{"from": "Antwerp (province)", "to": "Flanders", "type": "link", "properties": {"count": 2}}
+{"from": "Antwerp (province)", "to": "Flanders", "type": "part_of"}
+{"from": "Antwerp (province)", "to": "Mechelen", "type": "link", "properties": {"count": 1, "sections": ["Cities"]}}
+{"from": "Antwerp (province)", "to": "poi:Antwerp (province)#0", "type": "has_poi"}
+{"from": "Antwerp (province)", "to": "poi:Antwerp (province)#1", "type": "has_poi"}
+{"from": "Antwerp (province)", "to": "poi:Antwerp (province)#2", "type": "has_poi"}
+{"from": "Antwerp (province)", "to": "poi:Antwerp (province)#3", "type": "has_poi"}
+{"from": "Belgian coast by tram", "to": "Antwerp", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "Belgian coast by tram", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "Belgian coast by tram", "to": "Bruges", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Understand"]}}
+{"from": "Belgian coast by tram", "to": "Brussels", "type": "link", "properties": {"count": 4, "sections": ["Get in"]}}
+{"from": "Belgian coast by tram", "to": "Flanders", "type": "link", "properties": {"count": 2, "sections": ["Understand"]}}
+{"from": "Belgian coast by tram", "to": "Ghent", "type": "link", "properties": {"count": 5, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Belgian coast by tram", "to": "Knokke-Heist", "type": "link", "properties": {"count": 1}}
+{"from": "Belgian coast by tram", "to": "Kortrijk", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "Belgian coast by tram", "to": "Leuven", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "Belgian coast by tram", "to": "Mechelen", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "Belgian coast by tram", "to": "Ostend", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Understand"]}}
+{"from": "Belgian coast by tram", "to": "West Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Belgian coast by tram", "to": "Ypres", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Belgian coast by tram", "to": "poi:Belgian coast by tram#0", "type": "has_poi"}
+{"from": "Belgian coast by tram", "to": "poi:Belgian coast by tram#1", "type": "has_poi"}
+{"from": "Belgian coast by tram", "to": "poi:Belgian coast by tram#2", "type": "has_poi"}
+{"from": "Belgian coast by tram", "to": "poi:Belgian coast by tram#3", "type": "has_poi"}
+{"from": "Belgian coast by tram", "to": "poi:Belgian coast by tram#4", "type": "has_poi"}
+{"from": "Belgium", "to": "Antwerp", "type": "link", "properties": {"count": 10, "sections": ["Buy", "Cities", "Get around", "Get in", "Regions", "See", "Stay safe"]}}
+{"from": "Belgium", "to": "Antwerp (province)", "type": "link", "properties": {"count": 2, "sections": ["Regions"]}}
+{"from": "Belgium", "to": "Belgian coast by tram", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Belgium", "to": "Benelux", "type": "link", "properties": {"count": 1}}
+{"from": "Belgium", "to": "Benelux", "type": "part_of"}
+{"from": "Belgium", "to": "Bruges", "type": "link", "properties": {"count": 5, "sections": ["Buy", "Cities", "Get in", "Regions", "See"]}}
+{"from": "Belgium", "to": "Brussels", "type": "link", "properties": {"count": 14, "sections": ["Buy", "Cities", "Get around", "Get in", "Other destinations", "Regions", "See", "Sleep", "Stay safe"]}}
+{"from": "Belgium", "to": "East Flanders", "type": "link", "properties": {"count": 2, "sections": ["Regions"]}}
+{"from": "Belgium", "to": "Flanders", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Regions", "Respect"]}}
+{"from": "Belgium", "to": "Flemish Brabant", "type": "link", "properties": {"count": 2, "sections": ["Regions"]}}
+{"from": "Belgium", "to": "Ghent", "type": "link", "properties": {"count": 5, "sections": ["Cities", "Get in", "Regions", "See"]}}
+{"from": "Belgium", "to": "Leuven", "type": "link", "properties": {"count": 5, "sections": ["Cities", "Get in", "See"]}}
+{"from": "Belgium", "to": "Mechelen", "type": "link", "properties": {"count": 2, "sections": ["Cities", "Get in"]}}
+{"from": "Belgium", "to": "Ostend", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Belgium", "to": "West Flanders", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Regions"]}}
+{"from": "Belgium", "to": "Ypres", "type": "link", "properties": {"count": 2, "sections": ["Other destinations", "Understand"]}}
+{"from": "Belgium", "to": "poi:Belgium#0", "type": "has_poi"}
+{"from": "Belgium", "to": "poi:Belgium#1", "type": "has_poi"}
+{"from": "Belgium", "to": "poi:Belgium#2", "type": "has_poi"}
+{"from": "Belgium", "to": "poi:Belgium#3", "type": "has_poi"}
+{"from": "Belgium", "to": "poi:Belgium#4", "type": "has_poi"}
+{"from": "Benelux", "to": "Antwerp", "type": "link", "properties": {"count": 4, "sections": ["Cities", "Get in", "See"]}}
+{"from": "Benelux", "to": "Belgium", "type": "link", "properties": {"count": 7, "sections": ["Countries", "Do", "Eat", "Understand"]}}
+{"from": "Benelux", "to": "Bruges", "type": "link", "properties": {"count": 3, "sections": ["Cities", "See", "Understand"]}}
+{"from": "Benelux", "to": "Brussels", "type": "link", "properties": {"count": 5, "sections": ["Cities", "Get in", "See", "Understand"]}}
+{"from": "Benelux", "to": "Europe", "type": "part_of"}
+{"from": "Benelux", "to": "Flanders", "type": "link", "properties": {"count": 1, "sections": ["See"]}}
+{"from": "Benelux", "to": "Flemish Brabant", "type": "link", "properties": {"count": 1, "sections": ["Other destinations"]}}
+{"from": "Benelux", "to": "Ghent", "type": "link", "properties": {"count": 1, "sections": ["See"]}}
+{"from": "Bruges", "to": "Antwerp", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Bruges", "to": "Belgian coast by tram", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Bruges", "to": "Belgium", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "Bruges", "to": "Brussels", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next"]}}
+{"from": "Bruges", "to": "Damme", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Bruges", "to": "De Haan", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Bruges", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Bruges", "to": "Ghent", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Bruges", "to": "Knokke-Heist", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Bruges", "to": "Ostend", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "Bruges", "to": "West Flanders", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Bruges", "to": "West Flanders", "type": "part_of"}
+{"from": "Bruges", "to": "Ypres", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Bruges", "to": "poi:Bruges#0", "type": "has_poi"}
+{"from": "Bruges", "to": "poi:Bruges#1", "type": "has_poi"}
+{"from": "Bruges", "to": "poi:Bruges#2", "type": "has_poi"}
+{"from": "Bruges", "to": "poi:Bruges#3", "type": "has_poi"}
+{"from": "Bruges", "to": "poi:Bruges#4", "type": "has_poi"}
+{"from": "Brussels", "to": "Antwerp", "type": "link", "properties": {"count": 4, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Brussels", "to": "Belgium", "type": "link", "properties": {"count": 4, "sections": ["Districts", "See", "Understand"]}}
+{"from": "Brussels", "to": "Belgium", "type": "part_of"}
+{"from": "Brussels", "to": "Bruges", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Brussels", "to": "Europe", "type": "link", "properties": {"count": 3, "sections": ["Districts", "Do", "Get in"]}}
+{"from": "Brussels", "to": "Flanders", "type": "link", "properties": {"count": 6, "sections": ["Districts", "Get around", "Get in", "Understand"]}}
+{"from": "Brussels", "to": "Ghent", "type": "link", "properties": {"count": 2, "sections": ["Go next", "Understand"]}}
+{"from": "Brussels", "to": "Kortrijk", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Brussels", "to": "Leuven", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Brussels", "to": "Mechelen", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Brussels", "to": "Ostend", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Brussels", "to": "poi:Brussels#0", "type": "has_poi"}
+{"from": "Brussels", "to": "poi:Brussels#1", "type": "has_poi"}
+{"from": "Brussels", "to": "poi:Brussels#2", "type": "has_poi"}
+{"from": "Brussels", "to": "poi:Brussels#3", "type": "has_poi"}
+{"from": "Brussels", "to": "poi:Brussels#4", "type": "has_poi"}
+{"from": "Damme", "to": "Bruges", "type": "link", "properties": {"count": 1}}
+{"from": "Damme", "to": "Knokke-Heist", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Damme", "to": "West Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Damme", "to": "West Flanders", "type": "part_of"}
+{"from": "Damme", "to": "poi:Damme#0", "type": "has_poi"}
+{"from": "Damme", "to": "poi:Damme#1", "type": "has_poi"}
+{"from": "Damme", "to": "poi:Damme#2", "type": "has_poi"}
+{"from": "Damme", "to": "poi:Damme#3", "type": "has_poi"}
+{"from": "Damme", "to": "poi:Damme#4", "type": "has_poi"}
+{"from": "De Haan", "to": "Bruges", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "De Haan", "to": "Brussels", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "De Haan", "to": "Ghent", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "De Haan", "to": "Knokke-Heist", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "De Haan", "to": "Ostend", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "De Haan", "to": "West Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "De Haan", "to": "West Flanders", "type": "part_of"}
+{"from": "De Haan", "to": "poi:De Haan#0", "type": "has_poi"}
+{"from": "De Haan", "to": "poi:De Haan#1", "type": "has_poi"}
+{"from": "De Haan", "to": "poi:De Haan#2", "type": "has_poi"}
+{"from": "De Haan", "to": "poi:De Haan#3", "type": "has_poi"}
+{"from": "De Haan", "to": "poi:De Haan#4", "type": "has_poi"}
+{"from": "East Flanders", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "East Flanders", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "East Flanders", "to": "Flanders", "type": "part_of"}
+{"from": "East Flanders", "to": "Ghent", "type": "link", "properties": {"count": 2, "sections": ["Cities"]}}
+{"from": "East Flanders", "to": "poi:East Flanders#0", "type": "has_poi"}
+{"from": "East Flanders", "to": "poi:East Flanders#1", "type": "has_poi"}
+{"from": "Europe", "to": "Belgium", "type": "link", "properties": {"count": 6, "sections": ["Drink", "Eat", "Get around", "Get in", "Regions"]}}
+{"from": "Europe", "to": "Benelux", "type": "link", "properties": {"count": 3, "sections": ["Eat", "Get around", "Regions"]}}
+{"from": "Flanders", "to": "Antwerp", "type": "link", "properties": {"count": 9, "sections": ["Cities", "Do", "Get around", "Get in", "See", "Stay safe", "Talk"]}}
+{"from": "Flanders", "to": "Antwerp (province)", "type": "link", "properties": {"count": 2, "sections": ["Provinces"]}}
+{"from": "Flanders", "to": "Belgium", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "Flanders", "to": "Belgium", "type": "part_of"}
+{"from": "Flanders", "to": "Bruges", "type": "link", "properties": {"count": 3, "sections": ["Cities", "See"]}}
+{"from": "Flanders", "to": "Brussels", "type": "link", "properties": {"count": 4, "sections": ["Do", "Understand"]}}
+{"from": "Flanders", "to": "East Flanders", "type": "link", "properties": {"count": 2, "sections": ["Provinces"]}}
+{"from": "Flanders", "to": "Flemish Brabant", "type": "link", "properties": {"count": 2, "sections": ["Provinces"]}}
+{"from": "Flanders", "to": "Ghent", "type": "link", "properties": {"count": 5, "sections": ["Cities", "Do", "Get around", "See"]}}
+{"from": "Flanders", "to": "Knokke-Heist", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Flanders", "to": "Kortrijk", "type": "link", "properties": {"count": 3, "sections": ["Cities", "Get in", "See"]}}
+{"from": "Flanders", "to": "Leuven", "type": "link", "properties": {"count": 6, "sections": ["Cities", "Do", "See"]}}
+{"from": "Flanders", "to": "Mechelen", "type": "link", "properties": {"count": 4, "sections": ["Cities", "Do", "See"]}}
+{"from": "Flanders", "to": "Ostend", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Flanders", "to": "West Flanders", "type": "link", "properties": {"count": 2, "sections": ["Provinces"]}}
+{"from": "Flanders", "to": "Ypres", "type": "link", "properties": {"count": 1, "sections": ["Cities"]}}
+{"from": "Flanders", "to": "poi:Flanders#0", "type": "has_poi"}
+{"from": "Flanders", "to": "poi:Flanders#1", "type": "has_poi"}
+{"from": "Flanders", "to": "poi:Flanders#2", "type": "has_poi"}
+{"from": "Flanders", "to": "poi:Flanders#3", "type": "has_poi"}
+{"from": "Flanders", "to": "poi:Flanders#4", "type": "has_poi"}
+{"from": "Flemish Brabant", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "Flemish Brabant", "to": "Brussels", "type": "link", "properties": {"count": 2, "sections": ["Understand"]}}
+{"from": "Flemish Brabant", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Flemish Brabant", "to": "Flanders", "type": "part_of"}
+{"from": "Flemish Brabant", "to": "Leuven", "type": "link", "properties": {"count": 2, "sections": ["Cities"]}}
+{"from": "Ghent", "to": "Antwerp", "type": "link", "properties": {"count": 6, "sections": ["Get around", "Get in", "Go next", "See", "Understand"]}}
+{"from": "Ghent", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "Ghent", "to": "Bruges", "type": "link", "properties": {"count": 3, "sections": ["Get around", "Get in", "Go next"]}}
+{"from": "Ghent", "to": "Brussels", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "Ghent", "to": "East Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Ghent", "to": "East Flanders", "type": "part_of"}
+{"from": "Ghent", "to": "Flanders", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ghent", "to": "Kortrijk", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ghent", "to": "Mechelen", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ghent", "to": "Ostend", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ghent", "to": "West Flanders", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ghent", "to": "poi:Ghent#0", "type": "has_poi"}
+{"from": "Ghent", "to": "poi:Ghent#1", "type": "has_poi"}
+{"from": "Ghent", "to": "poi:Ghent#2", "type": "has_poi"}
+{"from": "Ghent", "to": "poi:Ghent#3", "type": "has_poi"}
+{"from": "Ghent", "to": "poi:Ghent#4", "type": "has_poi"}
+{"from": "Knokke-Heist", "to": "Belgian coast by tram", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Knokke-Heist", "to": "Bruges", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Knokke-Heist", "to": "Brussels", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Knokke-Heist", "to": "Damme", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Knokke-Heist", "to": "Ghent", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Knokke-Heist", "to": "West Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Knokke-Heist", "to": "West Flanders", "type": "part_of"}
+{"from": "Knokke-Heist", "to": "poi:Knokke-Heist#0", "type": "has_poi"}
+{"from": "Knokke-Heist", "to": "poi:Knokke-Heist#1", "type": "has_poi"}
+{"from": "Knokke-Heist", "to": "poi:Knokke-Heist#2", "type": "has_poi"}
+{"from": "Knokke-Heist", "to": "poi:Knokke-Heist#3", "type": "has_poi"}
+{"from": "Knokke-Heist", "to": "poi:Knokke-Heist#4", "type": "has_poi"}
+{"from": "Kortrijk", "to": "Antwerp", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Kortrijk", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "Kortrijk", "to": "Bruges", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "Kortrijk", "to": "Brussels", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "Kortrijk", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Kortrijk", "to": "Ghent", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next"]}}
+{"from": "Kortrijk", "to": "West Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Kortrijk", "to": "West Flanders", "type": "part_of"}
+{"from": "Kortrijk", "to": "Ypres", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Kortrijk", "to": "poi:Kortrijk#0", "type": "has_poi"}
+{"from": "Kortrijk", "to": "poi:Kortrijk#1", "type": "has_poi"}
+{"from": "Kortrijk", "to": "poi:Kortrijk#2", "type": "has_poi"}
+{"from": "Kortrijk", "to": "poi:Kortrijk#3", "type": "has_poi"}
+{"from": "Kortrijk", "to": "poi:Kortrijk#4", "type": "has_poi"}
+{"from": "Leuven", "to": "Antwerp", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "Leuven", "to": "Belgium", "type": "link", "properties": {"count": 2, "sections": ["Understand"]}}
+{"from": "Leuven", "to": "Bruges", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next"]}}
+{"from": "Leuven", "to": "Brussels", "type": "link", "properties": {"count": 6, "sections": ["Get around", "Get in", "Go next"]}}
+{"from": "Leuven", "to": "Flemish Brabant", "type": "link", "properties": {"count": 2, "sections": ["Understand"]}}
+{"from": "Leuven", "to": "Flemish Brabant", "type": "part_of"}
+{"from": "Leuven", "to": "Ghent", "type": "link", "properties": {"count": 4, "sections": ["Get in", "Go next"]}}
+{"from": "Leuven", "to": "Kortrijk", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Leuven", "to": "Mechelen", "type": "link", "properties": {"count": 4, "sections": ["Get in", "Go next", "See"]}}
+{"from": "Leuven", "to": "Ostend", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Leuven", "to": "West Flanders", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Leuven", "to": "poi:Leuven#0", "type": "has_poi"}
+{"from": "Leuven", "to": "poi:Leuven#1", "type": "has_poi"}
+{"from": "Leuven", "to": "poi:Leuven#2", "type": "has_poi"}
+{"from": "Leuven", "to": "poi:Leuven#3", "type": "has_poi"}
+{"from": "Leuven", "to": "poi:Leuven#4", "type": "has_poi"}
+{"from": "Mechelen", "to": "Antwerp", "type": "link", "properties": {"count": 4, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Mechelen", "to": "Antwerp (province)", "type": "part_of"}
+{"from": "Mechelen", "to": "Brussels", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next", "Understand"]}}
+{"from": "Mechelen", "to": "Flanders", "type": "link", "properties": {"count": 2, "sections": ["Stay safe"]}}
+{"from": "Mechelen", "to": "Leuven", "type": "link", "properties": {"count": 2, "sections": ["Do", "Go next"]}}
+{"from": "Mechelen", "to": "poi:Mechelen#0", "type": "has_poi"}
+{"from": "Mechelen", "to": "poi:Mechelen#1", "type": "has_poi"}
+{"from": "Mechelen", "to": "poi:Mechelen#2", "type": "has_poi"}
+{"from": "Mechelen", "to": "poi:Mechelen#3", "type": "has_poi"}
+{"from": "Mechelen", "to": "poi:Mechelen#4", "type": "has_poi"}
+{"from": "Ostend", "to": "Antwerp", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Ostend", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "Ostend", "to": "Bruges", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Ostend", "to": "Brussels", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Ostend", "to": "De Haan", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next"]}}
+{"from": "Ostend", "to": "Ghent", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Ostend", "to": "Knokke-Heist", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "Ostend", "to": "West Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Ostend", "to": "West Flanders", "type": "part_of"}
+{"from": "Ostend", "to": "poi:Ostend#0", "type": "has_poi"}
+{"from": "Ostend", "to": "poi:Ostend#1", "type": "has_poi"}
+{"from": "Ostend", "to": "poi:Ostend#2", "type": "has_poi"}
+{"from": "Ostend", "to": "poi:Ostend#3", "type": "has_poi"}
+{"from": "Ostend", "to": "poi:Ostend#4", "type": "has_poi"}
+{"from": "West Flanders", "to": "Antwerp", "type": "link", "properties": {"count": 1, "sections": ["Get in"]}}
+{"from": "West Flanders", "to": "Belgian coast by tram", "type": "link", "properties": {"count": 1, "sections": ["Get around"]}}
+{"from": "West Flanders", "to": "Belgium", "type": "link", "properties": {"count": 1}}
+{"from": "West Flanders", "to": "Bruges", "type": "link", "properties": {"count": 6, "sections": ["Cities and towns", "Get in", "See"]}}
+{"from": "West Flanders", "to": "Brussels", "type": "link", "properties": {"count": 2, "sections": ["Get in"]}}
+{"from": "West Flanders", "to": "Damme", "type": "link", "properties": {"count": 1, "sections": ["Cities and towns"]}}
+{"from": "West Flanders", "to": "De Haan", "type": "link", "properties": {"count": 2, "sections": ["Cities and towns"]}}
+{"from": "West Flanders", "to": "East Flanders", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "West Flanders", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "West Flanders", "to": "Flanders", "type": "part_of"}
+{"from": "West Flanders", "to": "Ghent", "type": "link", "properties": {"count": 3, "sections": ["Get in", "Go next"]}}
+{"from": "West Flanders", "to": "Knokke-Heist", "type": "link", "properties": {"count": 2, "sections": ["Cities and towns", "See"]}}
+{"from": "West Flanders", "to": "Kortrijk", "type": "link", "properties": {"count": 1, "sections": ["Cities and towns"]}}
+{"from": "West Flanders", "to": "Ostend", "type": "link", "properties": {"count": 1, "sections": ["Cities and towns"]}}
+{"from": "West Flanders", "to": "Ypres", "type": "link", "properties": {"count": 11, "sections": ["Cities and towns", "Get in", "See"]}}
+{"from": "West Flanders", "to": "poi:West Flanders#0", "type": "has_poi"}
+{"from": "West Flanders", "to": "poi:West Flanders#1", "type": "has_poi"}
+{"from": "West Flanders", "to": "poi:West Flanders#2", "type": "has_poi"}
+{"from": "West Flanders", "to": "poi:West Flanders#3", "type": "has_poi"}
+{"from": "Ypres", "to": "Antwerp", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ypres", "to": "Bruges", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ypres", "to": "Brussels", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ypres", "to": "Flanders", "type": "link", "properties": {"count": 1}}
+{"from": "Ypres", "to": "Ghent", "type": "link", "properties": {"count": 1, "sections": ["Go next"]}}
+{"from": "Ypres", "to": "Kortrijk", "type": "link", "properties": {"count": 2, "sections": ["Get in", "Go next"]}}
+{"from": "Ypres", "to": "West Flanders", "type": "part_of"}
+{"from": "Ypres", "to": "poi:Ypres#0", "type": "has_poi"}
+{"from": "Ypres", "to": "poi:Ypres#1", "type": "has_poi"}
+{"from": "Ypres", "to": "poi:Ypres#2", "type": "has_poi"}
+{"from": "Ypres", "to": "poi:Ypres#3", "type": "has_poi"}
+{"from": "Ypres", "to": "poi:Ypres#4", "type": "has_poi"}

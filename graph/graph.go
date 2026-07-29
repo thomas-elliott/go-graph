@@ -9,6 +9,7 @@ type Node struct {
 type Edge struct {
 	From       string
 	To         string
+	Type       string
 	Properties map[string]any
 }
 
@@ -35,7 +36,7 @@ func (g *Graph) Node(id string) (Node, bool) {
 
 func (g *Graph) AddEdge(e Edge) {
 	for _, existing := range g.edges[e.From] {
-		if existing.To == e.To {
+		if existing.To == e.To && existing.Type == e.Type {
 			return
 		}
 	}
@@ -46,7 +47,7 @@ func (g *Graph) Edges(id string) []Edge {
 	return g.edges[id]
 }
 
-func (g *Graph) Neighbors(id string) []string {
+func (g *Graph) Neighbours(id string) []string {
 	edges := g.edges[id]
 	ids := make([]string, len(edges))
 	for i, e := range edges {

@@ -1,0 +1,21 @@
+COPYRIGHT
+---------
+
+This directory contains samples of data from English Wikivoyage downloaded from
+https://dumps.wikimedia.org/enwikivoyage/20260701/
+and is licenced under Attribution-ShareAlike 4.0 International
+
+https://creativecommons.org/licenses/by-sa/4.0/
+
+ATTRIBUTION
+-----------
+    © Wikivoyage contributors, CC BY-SA 4.0.
+
+Each record's id / properties.title corresponds to a Wikivoyage article at
+https://en.wikivoyage.org/wiki/<title>. Authorship and revision history for any
+article are available from its page history on that site.
+
+SHARE-ALIKE
+-----------
+If you redistribute this data or adaptations of it, you must do so under
+CC BY-SA 4.0 (or a compatible license) and retain this attribution notice.
