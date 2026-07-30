@@ -11,6 +11,10 @@ tasks:
     cmds:
       - go test ./...
 
+  format:
+    cmds:
+      - go fmt ./...
+
   build:
     desc: Build everything
     cmds:
