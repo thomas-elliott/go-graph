@@ -6,7 +6,10 @@ type Node struct {
 	Labels     []string
 }
 
+type EdgeID int
+
 type Edge struct {
+	ID         EdgeID
 	From       string
 	To         string
 	Type       string
@@ -14,14 +17,20 @@ type Edge struct {
 }
 
 type Graph struct {
-	nodes map[string]Node
-	edges map[string][]Edge
+	nodes  map[string]Node
+	edges  map[EdgeID]Edge
+	nextID EdgeID
+	out    map[string][]EdgeID
+	in     map[string][]EdgeID
 }
 
 func New() *Graph {
 	return &Graph{
-		nodes: make(map[string]Node),
-		edges: make(map[string][]Edge),
+		nodes:  make(map[string]Node),
+		edges:  make(map[EdgeID]Edge),
+		nextID: 1,
+		out:    make(map[string][]EdgeID),
+		in:     make(map[string][]EdgeID),
 	}
 }
 
@@ -34,28 +43,44 @@ func (g *Graph) Node(id string) (Node, bool) {
 	return n, ok
 }
 
-func (g *Graph) AddEdge(e Edge) {
-	for _, existing := range g.edges[e.From] {
-		if existing.To == e.To && existing.Type == e.Type {
-			return
-		}
+func (g *Graph) AddEdge(e Edge) EdgeID {
+	if existing, ok := g.findEdge(e.From, e.To, e.Type); ok {
+		return existing
 	}
-	g.edges[e.From] = append(g.edges[e.From], e)
+
+	e.ID = g.nextID
+	g.edges[e.ID] = e
+	g.out[e.From] = append(g.out[e.From], e.ID)
+	g.in[e.To] = append(g.in[e.To], e.ID)
+	g.nextID++
+
+	return e.ID
 }
 
-func (g *Graph) Edges(id string) []Edge {
-	return g.edges[id]
+func (g *Graph) Edges(id string) []EdgeID {
+	return g.out[id]
 }
 
 func (g *Graph) Neighbours(id string) []string {
-	edges := g.edges[id]
+	edges := g.out[id]
 	ids := make([]string, len(edges))
 	for i, e := range edges {
-		ids[i] = e.To
+		edge := g.edges[e]
+		ids[i] = edge.To
 	}
 	return ids
 }
 
 func (g *Graph) Len() int {
 	return len(g.nodes)
+}
+
+func (g *Graph) findEdge(from, to, typ string) (EdgeID, bool) {
+	for _, e := range g.out[from] {
+		edge := g.edges[e]
+		if edge.To == to && edge.Type == typ {
+			return e, true
+		}
+	}
+	return 0, false
 }

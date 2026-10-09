@@ -18,7 +18,7 @@ func TestNeighbours(t *testing.T) {
 	if !slices.Equal(got, []string{"b", "c"}) {
 		t.Fatalf("neighbours(a) = %v, want [b c]", got)
 	}
-	if edges := g.Edges("a"); len(edges) != 2 || edges[1].Properties["sand"] != "black" {
+	if edges := g.Edges("a"); len(edges) != 2 || g.edges[edges[1]].Properties["sand"] != "black" {
 		t.Fatalf("Edges(a) = %+v, want 2 edges with sand=black on the second", edges)
 	}
 	if g.Len() != 3 {
