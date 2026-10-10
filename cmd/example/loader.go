@@ -12,6 +12,12 @@ type nodeLine struct {
 	ID         string         `json:"id"`
 	Labels     []string       `json:"labels"`
 	Properties map[string]any `json:"properties"`
+	Sections   []sectionLine  `json:"sections"`
+}
+
+type sectionLine struct {
+	Heading string `json:"heading"`
+	Text    string `json:"text"`
 }
 
 type edgeLine struct {
@@ -27,6 +33,7 @@ func loadSampleData(g *graph.Graph) error {
 
 	addNode := func(n nodeLine) {
 		g.AddNode(graph.Node{ID: n.ID, Labels: n.Labels, Properties: n.Properties})
+		addChunks(g, n.ID, n.Sections)
 	}
 
 	addEdge := func(e edgeLine) {
@@ -41,6 +48,23 @@ func loadSampleData(g *graph.Graph) error {
 	}
 
 	return nil
+}
+
+func addChunks(g *graph.Graph, parentID string, sections []sectionLine) {
+	var previousID string
+	for i, s := range sections {
+		id := fmt.Sprintf("chunk:%s#%d", parentID, i)
+		g.AddNode(graph.Node{
+			ID:         id,
+			Labels:     []string{"chunk"},
+			Properties: map[string]any{"heading": s.Heading, "text": s.Text},
+		})
+		g.AddEdge(graph.Edge{From: parentID, To: id, Type: "has_chunk"})
+		if i > 0 {
+			g.AddEdge(graph.Edge{From: previousID, To: id, Type: "next_chunk"})
+		}
+		previousID = id
+	}
 }
 
 func loadJSONL[T any](filePath string, fn func(T)) error {
