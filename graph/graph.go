@@ -1,5 +1,7 @@
 package graph
 
+import "slices"
+
 type Node struct {
 	ID         string
 	Properties map[string]any
@@ -57,8 +59,20 @@ func (g *Graph) AddEdge(e Edge) EdgeID {
 	return e.ID
 }
 
+func (g *Graph) RemoveEdge(id EdgeID) bool {
+	e, ok := g.edges[id]
+	if !ok {
+		return false
+	}
+
+	g.out[e.From] = slices.DeleteFunc(g.out[e.From], func(x EdgeID) bool { return x == e.ID })
+	g.in[e.To] = slices.DeleteFunc(g.in[e.To], func(x EdgeID) bool { return x == e.ID })
+	delete(g.edges, id)
+	return true
+}
+
 func (g *Graph) Edges(id string) []EdgeID {
-	return g.out[id]
+	return slices.Clone(g.out[id])
 }
 
 func (g *Graph) Neighbours(id string) []string {
