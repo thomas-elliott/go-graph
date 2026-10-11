@@ -2,6 +2,8 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+export DATABASE_URL := env("DATABASE_URL", "postgres://graph:graph@localhost:5432/graph?sslmode=disable")
+
 _default:
     @just --list
 
@@ -16,3 +18,12 @@ test:
 
 format:
     go fmt ./...
+
+db-up:
+    docker compose up -d --wait
+
+db-down:
+    docker compose down
+
+db-psql:
+    docker compose exec db psql -U graph graph

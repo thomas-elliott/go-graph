@@ -8,6 +8,11 @@ import (
 	"github.com/thomas-elliott/go-graph/graph"
 )
 
+const (
+	nodePath = "./data/nodes.jsonl"
+	edgePath = "./data/edges.jsonl"
+)
+
 type nodeLine struct {
 	ID         string         `json:"id"`
 	Labels     []string       `json:"labels"`
@@ -27,47 +32,31 @@ type edgeLine struct {
 	Properties map[string]any `json:"properties"`
 }
 
-func loadSampleData(g *graph.Graph) error {
-	nodePath := "./data/nodes.jsonl"
-	edgePath := "./data/edges.jsonl"
-
-	addNode := func(n nodeLine) {
-		g.AddNode(graph.Node{ID: n.ID, Labels: n.Labels, Properties: n.Properties})
-		addChunks(g, n.ID, n.Sections)
-	}
-
-	addEdge := func(e edgeLine) {
-		g.AddEdge(graph.Edge{From: e.From, To: e.To, Type: e.Type, Properties: e.Properties})
-	}
-
-	if err := loadJSONL(nodePath, addNode); err != nil {
-		return err
-	}
-	if err := loadJSONL(edgePath, addEdge); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func addChunks(g *graph.Graph, parentID string, sections []sectionLine) {
+// chunks turns a node's sections into chunk nodes, linked to the parent by
+// has_chunk and to each other by next_chunk. Both loaders use it so they build
+// the same graph.
+func chunks(n nodeLine) ([]graph.Node, []graph.Edge) {
+	var nodes []graph.Node
+	var edges []graph.Edge
 	var previousID string
-	for i, s := range sections {
-		id := fmt.Sprintf("chunk:%s#%d", parentID, i)
-		g.AddNode(graph.Node{
-			ID:         id,
-			Labels:     []string{"chunk"},
-			Properties: map[string]any{"heading": s.Heading, "text": s.Text},
+	for i, s := range n.Sections {
+		id := fmt.Sprintf("chunk:%s#%d", n.ID, i)
+		nodes = append(nodes, graph.Node{
+			ID:     id,
+			Labels: []string{"chunk"},
+			// dest matches the POI property, so search can treat both alike.
+			Properties: map[string]any{"dest": n.ID, "heading": s.Heading, "text": s.Text},
 		})
-		g.AddEdge(graph.Edge{From: parentID, To: id, Type: "has_chunk"})
+		edges = append(edges, graph.Edge{From: n.ID, To: id, Type: "has_chunk"})
 		if i > 0 {
-			g.AddEdge(graph.Edge{From: previousID, To: id, Type: "next_chunk"})
+			edges = append(edges, graph.Edge{From: previousID, To: id, Type: "next_chunk"})
 		}
 		previousID = id
 	}
+	return nodes, edges
 }
 
-func loadJSONL[T any](filePath string, fn func(T)) error {
+func loadJSONL[T any](filePath string, fn func(T) error) error {
 	f, err := os.Open(filePath)
 
 	if err != nil {
@@ -82,7 +71,9 @@ func loadJSONL[T any](filePath string, fn func(T)) error {
 		if err := decoder.Decode(&item); err != nil {
 			return fmt.Errorf("decode %s: %w", filePath, err)
 		}
-		fn(item)
+		if err := fn(item); err != nil {
+			return err
+		}
 	}
 
 	return nil
