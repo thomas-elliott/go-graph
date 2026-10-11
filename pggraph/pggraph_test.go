@@ -1,25 +1,47 @@
 package pggraph
 
 import (
-	"context"
 	"os"
 	"testing"
 
 	"github.com/thomas-elliott/go-graph/graph"
+	"github.com/thomas-elliott/go-graph/graph/graphtest"
 )
 
-func TestStore_Search(t *testing.T) {
+// openTestStore skips without DATABASE_URL
+func openTestStore(t *testing.T) *Store {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		t.Skip("DATABASE_URL not set")
 	}
-	ctx := context.Background()
-
-	s, err := Open(ctx, dsn)
+	s, err := Open(t.Context(), dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	t.Cleanup(func() { s.Close() })
+	return s
+}
+
+func TestStore_Graph(t *testing.T) {
+	s := openTestStore(t)
+	graphtest.Run(t, func(t *testing.T, nodes []graph.Node, edges []graph.Edge) graph.Graph {
+		ctx := t.Context()
+		if err := s.Clear(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.AddNodes(ctx, nodes); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.AddEdges(ctx, edges); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	})
+}
+
+func TestStore_Search(t *testing.T) {
+	s := openTestStore(t)
+	ctx := t.Context()
 
 	if err := s.Clear(ctx); err != nil {
 		t.Fatal(err)
@@ -27,7 +49,7 @@ func TestStore_Search(t *testing.T) {
 	chunk := func(id, dest, heading, text string) graph.Node {
 		return graph.Node{ID: id, Labels: []string{"chunk"}, Properties: map[string]any{"dest": dest, "heading": heading, "text": text}}
 	}
-	err = s.AddNodes(ctx, []graph.Node{
+	err := s.AddNodes(ctx, []graph.Node{
 		{ID: "Bruges", Labels: []string{"destination"}},
 		chunk("chunk:Bruges#3", "Bruges", "Get in", "Trains run every half hour from Brussels."),
 		chunk("chunk:Ghent#3", "Ghent", "Get in", "Trains run often from Brussels."),

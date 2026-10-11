@@ -4,7 +4,7 @@ import "github.com/thomas-elliott/go-graph/graph"
 
 // loadGraph fills g with the nodes and edges from data/, splitting each
 // node's sections into chunk nodes.
-func loadGraph(g *graph.Graph) error {
+func loadGraph(g *graph.Memory) error {
 	addNode := func(n nodeLine) error {
 		g.AddNode(graph.Node{ID: n.ID, Labels: n.Labels, Properties: n.Properties})
 		chunkNodes, chunkEdges := chunks(n)

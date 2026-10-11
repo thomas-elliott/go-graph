@@ -27,8 +27,10 @@ type nodeRow struct {
 func (nodeRow) TableName() string { return "nodes" }
 
 type edgeRow struct {
-	From       string `gorm:"column:from_id"`
-	To         string `gorm:"column:to_id"`
+	// ID assigned by Postgres.
+	ID         graph.EdgeID `gorm:"->"`
+	From       string       `gorm:"column:from_id"`
+	To         string       `gorm:"column:to_id"`
 	Type       string
 	Properties map[string]any `gorm:"serializer:json"`
 }
@@ -45,6 +47,8 @@ type Hit struct {
 type Store struct {
 	db *gorm.DB
 }
+
+var _ graph.Graph = (*Store)(nil)
 
 // Open connects to the database and creates the schema if it is missing.
 func Open(ctx context.Context, dsn string) (*Store, error) {
@@ -86,6 +90,75 @@ func (s *Store) AddEdges(ctx context.Context, edges []graph.Edge) error {
 		rows[i] = edgeRow{From: e.From, To: e.To, Type: e.Type, Properties: e.Properties}
 	}
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&rows).Error
+}
+
+// Node implements graph.Graph.
+func (s *Store) Node(ctx context.Context, id string) (graph.Node, bool, error) {
+	var row nodeRow
+	res := s.db.WithContext(ctx).Limit(1).Find(&row, "id = ?", id)
+	if res.Error != nil || res.RowsAffected == 0 {
+		return graph.Node{}, false, res.Error
+	}
+	return graph.Node{ID: row.ID, Labels: row.Labels, Properties: row.Properties}, true, nil
+}
+
+// Edge implements graph.Graph.
+func (s *Store) Edge(ctx context.Context, id graph.EdgeID) (graph.Edge, bool, error) {
+	var row edgeRow
+	res := s.db.WithContext(ctx).Limit(1).Find(&row, "id = ?", id)
+	if res.Error != nil || res.RowsAffected == 0 {
+		return graph.Edge{}, false, res.Error
+	}
+	return graph.Edge{ID: row.ID, From: row.From, To: row.To, Type: row.Type, Properties: row.Properties}, true, nil
+}
+
+// edgesOf orders outgoing edges first, then by insertion, matching Memory.
+// A self-loop is one row, so it is listed once.
+const edgesOf = `
+	FROM edges
+	WHERE ((from_id = @id AND @out) OR (to_id = @id AND @in))
+	  AND (@typ = '' OR type = @typ)
+	ORDER BY from_id <> @id, id`
+
+func edgeArgs(id string, dir graph.Direction, typ string) map[string]any {
+	return map[string]any{"id": id, "out": dir != graph.In, "in": dir != graph.Out, "typ": typ}
+}
+
+// Edges implements graph.Graph.
+func (s *Store) Edges(ctx context.Context, id string, dir graph.Direction, typ string) ([]graph.EdgeID, error) {
+	var ids []graph.EdgeID
+	err := s.db.WithContext(ctx).Raw("SELECT id"+edgesOf, edgeArgs(id, dir, typ)).Scan(&ids).Error
+	return ids, err
+}
+
+// Neighbours implements graph.Graph.
+func (s *Store) Neighbours(ctx context.Context, id string, dir graph.Direction, typ string) ([]string, error) {
+	var ends []string
+	err := s.db.WithContext(ctx).Raw(
+		"SELECT CASE WHEN from_id = @id THEN to_id ELSE from_id END"+edgesOf,
+		edgeArgs(id, dir, typ),
+	).Scan(&ends).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Deduplicate here; DISTINCT would lose the edge order.
+	seen := map[string]bool{}
+	var ids []string
+	for _, n := range ends {
+		if seen[n] {
+			continue
+		}
+		seen[n] = true
+		ids = append(ids, n)
+	}
+	return ids, nil
+}
+
+// Expand implements graph.Graph with one query per node visited. A recursive
+// query could do it in one.
+func (s *Store) Expand(ctx context.Context, start string, k int, dir graph.Direction, typ string) ([]graph.Hop, error) {
+	return graph.ExpandBFS(ctx, s, start, k, dir, typ)
 }
 
 // Search returns up to limit node IDs matching query, best results first.
