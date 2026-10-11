@@ -15,6 +15,6 @@ func main() {
 	}
 
 	fmt.Printf("graph has %d nodes\n", g.Len())
-	fmt.Printf("neighbours of Belgium: %v\n", g.Neighbours("Belgium"))
-	fmt.Printf("neighbours of chunk:Bruges#0: %v\n", g.Neighbours("chunk:Bruges#0"))
+	fmt.Printf("neighbours of Belgium: %v\n", g.Neighbours("Belgium", graph.Out, ""))
+	fmt.Printf("neighbours of chunk:Bruges#0: %v\n", g.Neighbours("chunk:Bruges#0", graph.Out, ""))
 }
