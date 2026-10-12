@@ -59,6 +59,19 @@ postgres: part of Belgium: [Brussels Flanders Wallonia]
 postgres: around chunk:Bruges#2: [{chunk:Bruges#2 0}]
 ```
 
+# Quick Start
+
+`mise install`
+
+`just db-up`
+
+`just dev`
+
+# Architecture
+
+`graph.Graph` is the interface for the GraphRAG system with different backing implementations.
+Currently implemented with in-memory and postgres.
+
 # Sample Data
 
 Sample data in ./data is from https://dumps.wikimedia.org/enwikivoyage
