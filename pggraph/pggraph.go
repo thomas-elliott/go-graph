@@ -155,10 +155,43 @@ func (s *Store) Neighbours(ctx context.Context, id string, dir graph.Direction, 
 	return ids, nil
 }
 
-// Expand implements graph.Graph with one query per node visited. A recursive
-// query could do it in one.
+// expandQuery is a breadth-first walk in one recursive query.
+const expandQuery = `
+WITH RECURSIVE walk(depth, frontier, visited) AS (
+    -- CAST rather than ::text for GORM
+    SELECT 0, ARRAY[CAST(@start AS text)], ARRAY[CAST(@start AS text)]
+  UNION ALL
+    SELECT w.depth + 1, next.nodes, w.visited || next.nodes
+    FROM walk w
+    CROSS JOIN LATERAL (
+        SELECT array_agg(n ORDER BY first_seen) AS nodes
+        FROM (
+            SELECT n, min(seen) AS first_seen
+            FROM (
+                SELECT CASE WHEN e.from_id = f.node THEN e.to_id ELSE e.from_id END AS n,
+                       row_number() OVER (ORDER BY f.ord, e.from_id <> f.node, e.id) AS seen
+                FROM unnest(w.frontier) WITH ORDINALITY AS f(node, ord)
+                JOIN edges e ON (e.from_id = f.node AND @out) OR (e.to_id = f.node AND @in)
+                WHERE @typ = '' OR e.type = @typ
+            ) candidates
+            WHERE n <> ALL (w.visited)
+            GROUP BY n
+        ) found
+    ) next
+    -- End the walk early if frontier is empty or we reach k
+    WHERE w.depth < @k AND cardinality(w.frontier) > 0
+)
+SELECT f.node AS id, w.depth
+FROM walk w, unnest(w.frontier) WITH ORDINALITY AS f(node, ord)
+ORDER BY w.depth, f.ord`
+
+// Expand implements graph.Graph in a single recursive query.
 func (s *Store) Expand(ctx context.Context, start string, k int, dir graph.Direction, typ string) ([]graph.Hop, error) {
-	return graph.ExpandBFS(ctx, s, start, k, dir, typ)
+	var hops []graph.Hop
+	err := s.db.WithContext(ctx).Raw(expandQuery, map[string]any{
+		"start": start, "k": k, "out": dir != graph.In, "in": dir != graph.Out, "typ": typ,
+	}).Scan(&hops).Error
+	return hops, err
 }
 
 // Search returns up to limit node IDs matching query, best results first.
