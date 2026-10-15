@@ -2,23 +2,30 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 
+	"github.com/thomas-elliott/go-graph/dataset"
 	"github.com/thomas-elliott/go-graph/graph"
 	"github.com/thomas-elliott/go-graph/pggraph"
 )
 
 func main() {
-	if err := run(context.Background()); err != nil {
+	dir := flag.String("data", "./data", "data folder")
+	flag.Parse()
+
+	if err := run(context.Background(), *dir); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context) error {
+func run(ctx context.Context, dir string) error {
 	memory := graph.NewMemory()
-	if err := loadGraph(memory); err != nil {
+	addNode := func(n graph.Node) error { memory.AddNode(n); return nil }
+	addEdge := func(e graph.Edge) error { memory.AddEdge(e); return nil }
+	if err := dataset.Read(dir, addNode, addEdge); err != nil {
 		return err
 	}
 	fmt.Printf("memory graph has %d nodes\n", memory.Len())
@@ -28,10 +35,6 @@ func run(ctx context.Context) error {
 		return err
 	}
 	defer store.Close()
-
-	if err := loadPostgres(ctx, store); err != nil {
-		return err
-	}
 
 	hits, err := store.Search(ctx, "bruges trains", 5)
 	if err != nil {

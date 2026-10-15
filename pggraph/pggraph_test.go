@@ -8,11 +8,10 @@ import (
 	"github.com/thomas-elliott/go-graph/graph/graphtest"
 )
 
-// openTestStore skips without DATABASE_URL
 func openTestStore(t *testing.T) *Store {
-	dsn := os.Getenv("DATABASE_URL")
+	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
-		t.Skip("DATABASE_URL not set")
+		t.Fail()
 	}
 	s, err := Open(t.Context(), dsn)
 	if err != nil {

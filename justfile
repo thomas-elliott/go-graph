@@ -3,12 +3,21 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 export DATABASE_URL := env("DATABASE_URL", "postgres://graph:graph@localhost:5432/graph?sslmode=disable")
+export TEST_DATABASE_URL := env("TEST_DATABASE_URL", "postgres://graph:graph@localhost:5432/graph_test?sslmode=disable")
 
 _default:
     @just --list
 
 dev:
     go run ./cmd/example
+
+# Loads the sample data
+load:
+    go run ./cmd/load
+
+# Loads the full dataset
+load-full:
+    go run ./cmd/load -data ./local/data
 
 build:
     go build ./...
@@ -21,6 +30,8 @@ format:
 
 db-up:
     docker compose up -d --wait
+    docker compose exec db psql -U graph -tAc "SELECT 1 FROM pg_database WHERE datname = 'graph_test'" | grep -q 1 \
+        || docker compose exec db createdb -U graph graph_test
 
 db-down:
     docker compose down
