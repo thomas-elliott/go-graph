@@ -11,11 +11,15 @@ _default:
 dev:
     go run ./cmd/example
 
-# Loads the sample data
+# Runs dev, but using a full dataset
+dev-full:
+    go run ./cmd/example -data ./local/data
+
+# Loads the sample data into postgres
 load:
     go run ./cmd/load
 
-# Loads the full dataset
+# Loads the full dataset into postgres
 load-full:
     go run ./cmd/load -data ./local/data
 
