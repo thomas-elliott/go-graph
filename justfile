@@ -2,6 +2,8 @@
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+set dotenv-load
+
 export DATABASE_URL := env("DATABASE_URL", "postgres://graph:graph@localhost:5432/graph?sslmode=disable")
 export TEST_DATABASE_URL := env("TEST_DATABASE_URL", "postgres://graph:graph@localhost:5432/graph_test?sslmode=disable")
 
@@ -22,6 +24,9 @@ load:
 # Loads the full dataset into postgres
 load-full:
     go run ./cmd/load -data ./local/data
+
+embed:
+    go run ./cmd/embed
 
 build:
     go build ./...

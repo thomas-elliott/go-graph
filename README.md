@@ -27,3 +27,11 @@ and edges:
 {"from":"Bruges","to":"Ghent","type":"link","properties":{"count":3,"sections":["Go next","Get in"]}}
 {"from":"Bruges","to":"poi:Bruges#0","type":"has_poi"}
 ```
+
+# Embeddings
+
+Uses any server with OpenAI style embeddings 
+
+Vector search needs an embedding server with an OpenAI-style `/v1/embeddings`
+endpoint; none is bundled. Copy `.env.example` to `.env` and set the URL, model,
+dimensions and API key, then run `just embed`. The `.env` file is ignored by git.

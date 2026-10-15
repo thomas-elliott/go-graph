@@ -3,6 +3,7 @@ module github.com/thomas-elliott/go-graph
 go 1.26
 
 require (
+	github.com/pgvector/pgvector-go v0.4.1
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )

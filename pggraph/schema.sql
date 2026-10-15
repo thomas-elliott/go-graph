@@ -21,3 +21,11 @@ CREATE TABLE IF NOT EXISTS edges (
 );
 
 CREATE INDEX IF NOT EXISTS edges_to_idx ON edges (to_id);
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS embeddings (
+    node_id   text PRIMARY KEY REFERENCES nodes (id) ON DELETE CASCADE,
+    model     text NOT NULL,
+    embedding vector NOT NULL
+);

@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/thomas-elliott/go-graph/dataset"
+	"github.com/thomas-elliott/go-graph/embed"
 	"github.com/thomas-elliott/go-graph/graph"
 	"github.com/thomas-elliott/go-graph/pggraph"
 )
@@ -36,19 +37,48 @@ func run(ctx context.Context, dir string) error {
 	}
 	defer store.Close()
 
-	hits, err := store.Search(ctx, "bruges trains", 5)
-	if err != nil {
+	if err := search(ctx, store, "bruges trains"); err != nil {
 		return err
 	}
-	fmt.Println("search: bruges trains")
-	for _, h := range hits {
-		fmt.Printf("  %.3f  %s\n", h.Rank, h.ID)
+	if err := search(ctx, store, "how do I get to Bruges by rail"); err != nil {
+		return err
 	}
 
 	if err := describe(ctx, "memory", memory); err != nil {
 		return err
 	}
 	return describe(ctx, "postgres", store)
+}
+
+func search(ctx context.Context, store *pggraph.Store, query string) error {
+	hits, err := store.Search(ctx, query, 5)
+	if err != nil {
+		return err
+	}
+	printHits("text search: "+query, hits)
+
+	client, err := embed.FromEnv()
+	if err != nil {
+		fmt.Println("vector search skipped:", err)
+		return nil
+	}
+	vectors, err := client.Embed(ctx, []string{query})
+	if err != nil {
+		return err
+	}
+	hits, err = store.VectorSearch(ctx, client.Model, vectors[0], 5)
+	if err != nil {
+		return err
+	}
+	printHits("vector search: "+query, hits)
+	return nil
+}
+
+func printHits(title string, hits []pggraph.Hit) {
+	fmt.Println(title)
+	for _, h := range hits {
+		fmt.Printf("  %.3f  %s\n", h.Rank, h.ID)
+	}
 }
 
 // describe runs the same queries on any backend.

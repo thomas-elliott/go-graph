@@ -37,7 +37,7 @@ type edgeRow struct {
 
 func (edgeRow) TableName() string { return "edges" }
 
-// Hit is a node ID matched by Search and Rank is its ts_rank score.
+// Hit is a node ID matched by Search, Rank is either full text or vector rank.
 type Hit struct {
 	ID   string
 	Rank float64
@@ -64,7 +64,7 @@ func Open(ctx context.Context, dsn string) (*Store, error) {
 
 // Clear deletes every node and edge.
 func (s *Store) Clear(ctx context.Context) error {
-	return s.db.WithContext(ctx).Exec("TRUNCATE nodes, edges RESTART IDENTITY").Error
+	return s.db.WithContext(ctx).Exec("TRUNCATE nodes, edges, embeddings RESTART IDENTITY").Error
 }
 
 // AddNodes inserts nodes, overwriting any with the same ID, like graph.AddNode.
