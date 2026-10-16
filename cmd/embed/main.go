@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/thomas-elliott/go-graph/embed"
-	"github.com/thomas-elliott/go-graph/graph"
 	"github.com/thomas-elliott/go-graph/pggraph"
 )
 
@@ -38,7 +36,7 @@ func run(ctx context.Context) error {
 	}
 
 	start := time.Now()
-	done := 0
+	done, fromCache := 0, 0
 	after := ""
 	for {
 		nodes, err := store.Unembedded(ctx, after, batchSize)
@@ -53,10 +51,10 @@ func run(ctx context.Context) error {
 		texts := make([]string, len(nodes))
 		for i, n := range nodes {
 			ids[i] = n.ID
-			texts[i] = embedText(n)
+			texts[i] = embed.Text(n)
 		}
 
-		vectors, err := client.Embed(ctx, texts)
+		vectors, hits, err := vectorsFor(ctx, client, store, texts)
 		if err != nil {
 			return err
 		}
@@ -65,21 +63,50 @@ func run(ctx context.Context) error {
 		}
 
 		done += len(nodes)
+		fromCache += hits
 		after = nodes[len(nodes)-1].ID
 		if done%(batchSize*100) == 0 {
-			fmt.Printf("embedded %d nodes in %s\n", done, time.Since(start).Round(time.Second))
+			fmt.Printf("embedded %d nodes (%d from cache) in %s\n", done, fromCache, time.Since(start).Round(time.Second))
 		}
 	}
-	fmt.Printf("embedded %d nodes in %s\n", done, time.Since(start).Round(time.Second))
+	fmt.Printf("embedded %d nodes (%d from cache) in %s\n", done, fromCache, time.Since(start).Round(time.Second))
 	return nil
 }
 
-func embedText(n graph.Node) string {
-	var parts []string
-	for _, key := range []string{"dest", "heading", "name", "text", "content"} {
-		if s, ok := n.Properties[key].(string); ok && s != "" {
-			parts = append(parts, s)
+// vectorsFor will return a vector, first from cache if available, otherwise the embedding provider
+func vectorsFor(ctx context.Context, client *embed.Client, store *pggraph.Store, texts []string) ([][]float32, int, error) {
+	hashes := make([]string, len(texts))
+	for i, t := range texts {
+		hashes[i] = embed.Hash(t)
+	}
+	cached, err := store.CachedEmbeddings(ctx, client.Model, client.Dims, hashes)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var missingTexts, missingHashes []string
+	for i, h := range hashes {
+		if _, ok := cached[h]; !ok {
+			missingTexts = append(missingTexts, texts[i])
+			missingHashes = append(missingHashes, h)
 		}
 	}
-	return strings.Join(parts, "\n")
+	if len(missingTexts) > 0 {
+		fetched, err := client.Embed(ctx, missingTexts)
+		if err != nil {
+			return nil, 0, err
+		}
+		if err := store.CacheEmbeddings(ctx, client.Model, client.Dims, missingHashes, fetched); err != nil {
+			return nil, 0, err
+		}
+		for j, h := range missingHashes {
+			cached[h] = fetched[j]
+		}
+	}
+
+	vectors := make([][]float32, len(texts))
+	for i, h := range hashes {
+		vectors[i] = cached[h]
+	}
+	return vectors, len(texts) - len(missingTexts), nil
 }

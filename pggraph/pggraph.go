@@ -62,7 +62,7 @@ func Open(ctx context.Context, dsn string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
-// Clear deletes every node and edge.
+// Clear deletes every node, edge and embedding.
 func (s *Store) Clear(ctx context.Context) error {
 	return s.db.WithContext(ctx).Exec("TRUNCATE nodes, edges, embeddings RESTART IDENTITY").Error
 }

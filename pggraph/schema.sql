@@ -29,3 +29,11 @@ CREATE TABLE IF NOT EXISTS embeddings (
     model     text NOT NULL,
     embedding vector NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS embedding_cache (
+    model     text NOT NULL,
+    dims      int NOT NULL,
+    text_hash text NOT NULL,
+    embedding vector NOT NULL,
+    PRIMARY KEY (model, dims, text_hash)
+);

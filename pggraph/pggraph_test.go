@@ -1,8 +1,10 @@
 package pggraph
 
 import (
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/thomas-elliott/go-graph/graph"
 	"github.com/thomas-elliott/go-graph/graph/graphtest"
@@ -126,5 +128,43 @@ func TestStore_Embeddings(t *testing.T) {
 	}
 	if err := s.CheckEmbeddings(ctx, "m", 3); err == nil {
 		t.Error("different size: want an error")
+	}
+}
+
+func TestStore_EmbeddingCache(t *testing.T) {
+	s := openTestStore(t)
+	ctx := t.Context()
+
+	h := fmt.Sprintf("test-%d", time.Now().UnixNano())
+	if err := s.CacheEmbeddings(ctx, "m", 2, []string{h}, [][]float32{{1, 2}}); err != nil {
+		t.Fatal(err)
+	}
+	// Don't overwrite the vector for the same hash
+	if err := s.CacheEmbeddings(ctx, "m", 2, []string{h}, [][]float32{{3, 4}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Clear(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.CachedEmbeddings(ctx, "m", 2, []string{h, "missing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[h][0] != 1 || got[h][1] != 2 {
+		t.Fatalf("CachedEmbeddings = %v, want only %s -> [1 2]", got, h)
+	}
+
+	for _, c := range []struct {
+		model string
+		dims  int
+	}{{"other", 2}, {"m", 3}} {
+		got, err := s.CachedEmbeddings(ctx, c.model, c.dims, []string{h})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("CachedEmbeddings(%q, %d) = %v, want nothing", c.model, c.dims, got)
+		}
 	}
 }

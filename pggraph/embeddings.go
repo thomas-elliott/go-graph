@@ -78,3 +78,40 @@ func (s *Store) VectorSearch(ctx context.Context, model string, query []float32,
 		LIMIT ?`, pgvector.NewVector(query), model, pgvector.NewVector(query), limit).Scan(&hits).Error
 	return hits, err
 }
+
+type cacheRow struct {
+	Model     string `gorm:"primaryKey"`
+	Dims      int    `gorm:"primaryKey"`
+	TextHash  string `gorm:"primaryKey"`
+	Embedding pgvector.Vector
+}
+
+func (cacheRow) TableName() string { return "embedding_cache" }
+
+// CachedEmbeddings returns the cached vectors keyed by their content hash.
+func (s *Store) CachedEmbeddings(ctx context.Context, model string, dims int, hashes []string) (map[string][]float32, error) {
+	var rows []cacheRow
+	err := s.db.WithContext(ctx).
+		Where("model = ? AND dims = ? AND text_hash IN ?", model, dims, hashes).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	cached := make(map[string][]float32, len(rows))
+	for _, r := range rows {
+		cached[r.TextHash] = r.Embedding.Slice()
+	}
+	return cached, nil
+}
+
+// CacheEmbeddings stores one vector per text hash.
+func (s *Store) CacheEmbeddings(ctx context.Context, model string, dims int, hashes []string, vectors [][]float32) error {
+	if len(hashes) == 0 {
+		return nil
+	}
+	rows := make([]cacheRow, len(hashes))
+	for i, h := range hashes {
+		rows[i] = cacheRow{Model: model, Dims: dims, TextHash: h, Embedding: pgvector.NewVector(vectors[i])}
+	}
+	return s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&rows).Error
+}

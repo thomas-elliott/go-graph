@@ -35,3 +35,7 @@ Uses any server with OpenAI style embeddings
 Vector search needs an embedding server with an OpenAI-style `/v1/embeddings`
 endpoint; none is bundled. Copy `.env.example` to `.env` and set the URL, model,
 dimensions and API key, then run `just embed`. The `.env` file is ignored by git.
+
+Every vector fetched is also kept in `embedding_cache`, keyed by model, size and
+a hash of the embedded text.
+
