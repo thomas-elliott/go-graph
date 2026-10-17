@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/thomas-elliott/go-graph/embed"
+	"github.com/thomas-elliott/go-graph/graph"
 	"github.com/thomas-elliott/go-graph/pggraph"
 )
 
@@ -40,18 +42,19 @@ type method func(ctx context.Context, query string) ([]string, error)
 
 func main() {
 	path := flag.String("questions", "eval/questions.jsonl", "questions file")
-	name := flag.String("method", "text", "retrieval method: text, vector or hybrid")
+	name := flag.String("method", "text", "retrieval method: text, vector, hybrid or walk")
+	seeds := flag.Int("seeds", 10, "vector hits the walk starts from")
 	limit := flag.Int("limit", 200, "hits to fetch per question")
 	show := flag.String("show", "", "list one question's ranked hits instead of scoring, e.g. nz-039")
 	flag.Parse()
 
-	if err := run(context.Background(), *path, *name, *limit, *show); err != nil {
+	if err := run(context.Background(), *path, *name, *limit, *seeds, *show); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, path, name string, limit int, show string) error {
+func run(ctx context.Context, path, name string, limit, seeds int, show string) error {
 	questions, err := readQuestions(path)
 	if err != nil {
 		return err
@@ -63,7 +66,7 @@ func run(ctx context.Context, path, name string, limit int, show string) error {
 	}
 	defer store.Close()
 
-	search, err := pickMethod(store, name, limit)
+	search, err := pickMethod(store, name, limit, seeds)
 	if err != nil {
 		return err
 	}
@@ -100,7 +103,7 @@ func run(ctx context.Context, path, name string, limit int, show string) error {
 	return nil
 }
 
-func pickMethod(store *pggraph.Store, name string, limit int) (method, error) {
+func pickMethod(store *pggraph.Store, name string, limit, seeds int) (method, error) {
 	text := func(ctx context.Context, query string) ([]string, error) {
 		hits, err := store.SearchAnyWord(ctx, query, limit)
 		return hitIDs(hits), err
@@ -113,12 +116,19 @@ func pickMethod(store *pggraph.Store, name string, limit int) (method, error) {
 	if err != nil {
 		return nil, err
 	}
-	vector := func(ctx context.Context, query string) ([]string, error) {
+	embedQuery := func(ctx context.Context, query string) ([]float32, error) {
 		vectors, err := client.Embed(ctx, []string{query})
 		if err != nil {
 			return nil, err
 		}
-		hits, err := store.VectorSearch(ctx, client.Model, vectors[0], limit)
+		return vectors[0], nil
+	}
+	vector := func(ctx context.Context, query string) ([]string, error) {
+		v, err := embedQuery(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		hits, err := store.VectorSearch(ctx, client.Model, v, limit)
 		return hitIDs(hits), err
 	}
 
@@ -138,8 +148,74 @@ func pickMethod(store *pggraph.Store, name string, limit int) (method, error) {
 			fused := fuse(textIDs, vectorIDs)
 			return fused[:min(limit, len(fused))], nil
 		}, nil
+	case "walk":
+		return func(ctx context.Context, query string) ([]string, error) {
+			v, err := embedQuery(ctx, query)
+			if err != nil {
+				return nil, err
+			}
+			hits, err := store.VectorSearch(ctx, client.Model, v, seeds)
+			if err != nil {
+				return nil, err
+			}
+			candidates, err := neighbourhood(ctx, store, hitIDs(hits))
+			if err != nil {
+				return nil, err
+			}
+			hits, err = store.VectorSearchWithin(ctx, client.Model, v, candidates, limit)
+			return hitIDs(hits), err
+		}, nil
 	}
 	return nil, fmt.Errorf("unknown method %q", name)
+}
+
+// neighbourhood returns the seeds plus the chunks and POIs of each seed's
+// destination, its part_of parent, and the destinations part_of it.
+func neighbourhood(ctx context.Context, g graph.Graph, seeds []string) ([]string, error) {
+	found := map[string]bool{}
+	add := func(ids ...string) {
+		for _, id := range ids {
+			found[id] = true
+		}
+	}
+	add(seeds...)
+
+	for _, seed := range seeds {
+		var dests []string
+		for _, typ := range []string{"has_chunk", "has_poi"} {
+			parents, err := g.Neighbours(ctx, seed, graph.In, typ)
+			if err != nil {
+				return nil, err
+			}
+			dests = append(dests, parents...)
+		}
+
+		var region []string
+		for _, dest := range dests {
+			up, err := g.Neighbours(ctx, dest, graph.Out, "part_of")
+			if err != nil {
+				return nil, err
+			}
+			down, err := g.Neighbours(ctx, dest, graph.In, "part_of")
+			if err != nil {
+				return nil, err
+			}
+			region = append(region, dest)
+			region = append(region, up...)
+			region = append(region, down...)
+		}
+
+		for _, dest := range region {
+			for _, typ := range []string{"has_chunk", "has_poi"} {
+				children, err := g.Neighbours(ctx, dest, graph.Out, typ)
+				if err != nil {
+					return nil, err
+				}
+				add(children...)
+			}
+		}
+	}
+	return slices.Collect(maps.Keys(found)), nil
 }
 
 // fuse merges rankings with reciprocal rank fusion.

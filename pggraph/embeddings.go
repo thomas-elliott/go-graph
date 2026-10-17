@@ -115,3 +115,15 @@ func (s *Store) CacheEmbeddings(ctx context.Context, model string, dims int, has
 	}
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&rows).Error
 }
+
+// VectorSearchWithin is VectorSearch limited to the given node IDs.
+func (s *Store) VectorSearchWithin(ctx context.Context, model string, query []float32, ids []string, limit int) ([]Hit, error) {
+	var hits []Hit
+	err := s.db.WithContext(ctx).Raw(`
+		SELECT node_id AS id, 1 - (embedding <=> ?) AS rank
+		FROM embeddings
+		WHERE model = ? AND node_id IN ?
+		ORDER BY embedding <=> ?
+		LIMIT ?`, pgvector.NewVector(query), model, ids, pgvector.NewVector(query), limit).Scan(&hits).Error
+	return hits, err
+}
