@@ -3,12 +3,14 @@ package main
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -38,7 +40,7 @@ type method func(ctx context.Context, query string) ([]string, error)
 
 func main() {
 	path := flag.String("questions", "eval/questions.jsonl", "questions file")
-	name := flag.String("method", "text", "retrieval method: text or vector")
+	name := flag.String("method", "text", "retrieval method: text, vector or hybrid")
 	limit := flag.Int("limit", 200, "hits to fetch per question")
 	show := flag.String("show", "", "list one question's ranked hits instead of scoring, e.g. nz-039")
 	flag.Parse()
@@ -99,27 +101,68 @@ func run(ctx context.Context, path, name string, limit int, show string) error {
 }
 
 func pickMethod(store *pggraph.Store, name string, limit int) (method, error) {
-	switch name {
-	case "text":
-		return func(ctx context.Context, query string) ([]string, error) {
-			hits, err := store.Search(ctx, query, limit)
-			return hitIDs(hits), err
-		}, nil
-	case "vector":
-		client, err := embed.FromEnv()
+	text := func(ctx context.Context, query string) ([]string, error) {
+		hits, err := store.SearchAnyWord(ctx, query, limit)
+		return hitIDs(hits), err
+	}
+	if name == "text" {
+		return text, nil
+	}
+
+	client, err := embed.FromEnv()
+	if err != nil {
+		return nil, err
+	}
+	vector := func(ctx context.Context, query string) ([]string, error) {
+		vectors, err := client.Embed(ctx, []string{query})
 		if err != nil {
 			return nil, err
 		}
+		hits, err := store.VectorSearch(ctx, client.Model, vectors[0], limit)
+		return hitIDs(hits), err
+	}
+
+	switch name {
+	case "vector":
+		return vector, nil
+	case "hybrid":
 		return func(ctx context.Context, query string) ([]string, error) {
-			vectors, err := client.Embed(ctx, []string{query})
+			textIDs, err := text(ctx, query)
 			if err != nil {
 				return nil, err
 			}
-			hits, err := store.VectorSearch(ctx, client.Model, vectors[0], limit)
-			return hitIDs(hits), err
+			vectorIDs, err := vector(ctx, query)
+			if err != nil {
+				return nil, err
+			}
+			fused := fuse(textIDs, vectorIDs)
+			return fused[:min(limit, len(fused))], nil
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown method %q", name)
+}
+
+// fuse merges rankings with reciprocal rank fusion.
+func fuse(rankings ...[]string) []string {
+	const k = 60
+	scores := map[string]float64{}
+	for _, ranking := range rankings {
+		for i, id := range ranking {
+			scores[id] += 1.0 / float64(k+i+1)
+		}
+	}
+
+	ids := make([]string, 0, len(scores))
+	for id := range scores {
+		ids = append(ids, id)
+	}
+	slices.SortFunc(ids, func(a, b string) int {
+		if c := cmp.Compare(scores[b], scores[a]); c != 0 {
+			return c
+		}
+		return strings.Compare(a, b)
+	})
+	return ids
 }
 
 func hitIDs(hits []pggraph.Hit) []string {
@@ -164,8 +207,8 @@ func score(ctx context.Context, q question, ranked []string, tokens func(context
 			if err != nil {
 				return r, err
 			}
-			if used+n > budget {
-				continue
+			if used >= budget {
+				break
 			}
 			used += n
 			if slices.Contains(q.Relevant, id) {
@@ -186,9 +229,15 @@ func showHits(ctx context.Context, q question, search method, tokens func(contex
 	fmt.Printf("%s (%s): %s\n", q.ID, q.Type, q.Question)
 	fmt.Printf("labelled: %v\n\n", q.Relevant)
 
-	largest := budgets[len(budgets)-1]
 	used, b := 0, 0
 	for i, id := range ranked {
+		for b < len(budgets) && used >= budgets[b] {
+			fmt.Printf("     ---- %d token budget\n", budgets[b])
+			b++
+		}
+		if b == len(budgets) {
+			break
+		}
 		n, err := tokens(ctx, id)
 		if err != nil {
 			return err
@@ -197,16 +246,8 @@ func showHits(ctx context.Context, q question, search method, tokens func(contex
 		if slices.Contains(q.Relevant, id) {
 			mark = "*"
 		}
-		if used+n > largest {
-			fmt.Printf("%4d %s %5d  skip %s\n", i+1, mark, n, id)
-			continue
-		}
-		used += n
-		for b < len(budgets) && used > budgets[b] {
-			fmt.Printf("     ---- %d token budget\n", budgets[b])
-			b++
-		}
 		fmt.Printf("%4d %s %5d  %s\n", i+1, mark, n, id)
+		used += n
 	}
 	return nil
 }

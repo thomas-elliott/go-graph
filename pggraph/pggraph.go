@@ -207,6 +207,18 @@ func (s *Store) Search(ctx context.Context, query string, limit int) ([]Hit, err
 	return hits, err
 }
 
+// SearchAnyWord is Search, but matching any word of the query instead of all.
+func (s *Store) SearchAnyWord(ctx context.Context, query string, limit int) ([]Hit, error) {
+	var hits []Hit
+	err := s.db.WithContext(ctx).Raw(`
+		SELECT id, ts_rank(tsv, q) AS rank
+		FROM nodes, (SELECT replace(plainto_tsquery('english', ?)::text, ' & ', ' | ')::tsquery AS q) query
+		WHERE tsv @@ q
+		ORDER BY rank DESC
+		LIMIT ?`, query, limit).Scan(&hits).Error
+	return hits, err
+}
+
 // Close closes the database connection.
 func (s *Store) Close() error {
 	db, err := s.db.DB()
