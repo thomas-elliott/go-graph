@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/thomas-elliott/go-graph/graph"
 )
@@ -59,27 +61,73 @@ func Read(dir string, addNode func(graph.Node) error, addEdge func(graph.Edge) e
 	return readJSONL(filepath.Join(dir, "edges.jsonl"), readEdge)
 }
 
+// maxChunkChars is about 1,000 tokens at 4 characters per token.
+const maxChunkChars = 4000
+
 // chunks turns a node's sections into chunk nodes, linked to the parent by
-// has_chunk and to each other by next_chunk.
+// has_chunk and to each other by next_chunk. Sections over maxChunkChars are
+// split into pieces with IDs #i.0, #i.1, so unsplit chunks keep their IDs.
 func chunks(n nodeLine) ([]graph.Node, []graph.Edge) {
 	var nodes []graph.Node
 	var edges []graph.Edge
 	var previousID string
 	for i, s := range n.Sections {
-		id := fmt.Sprintf("chunk:%s#%d", n.ID, i)
-		nodes = append(nodes, graph.Node{
-			ID:     id,
-			Labels: []string{"chunk"},
-			// dest matches the POI property, so search can treat both alike.
-			Properties: map[string]any{"dest": n.ID, "heading": s.Heading, "text": s.Text},
-		})
-		edges = append(edges, graph.Edge{From: n.ID, To: id, Type: "has_chunk"})
-		if i > 0 {
-			edges = append(edges, graph.Edge{From: previousID, To: id, Type: "next_chunk"})
+		pieces := splitText(s.Text, maxChunkChars)
+		for j, text := range pieces {
+			id := fmt.Sprintf("chunk:%s#%d", n.ID, i)
+			if len(pieces) > 1 {
+				id = fmt.Sprintf("%s.%d", id, j)
+			}
+			nodes = append(nodes, graph.Node{
+				ID:     id,
+				Labels: []string{"chunk"},
+				// dest matches the POI property, so search can treat both alike.
+				Properties: map[string]any{"dest": n.ID, "heading": s.Heading, "text": text},
+			})
+			edges = append(edges, graph.Edge{From: n.ID, To: id, Type: "has_chunk"})
+			if previousID != "" {
+				edges = append(edges, graph.Edge{From: previousID, To: id, Type: "next_chunk"})
+			}
+			previousID = id
 		}
-		previousID = id
 	}
 	return nodes, edges
+}
+
+// splitText packs text into pieces of at most max characters.
+func splitText(text string, max int) []string {
+	if utf8.RuneCountInString(text) <= max {
+		return []string{text}
+	}
+
+	var units []string
+	for _, line := range strings.SplitAfter(text, "\n") {
+		for _, sentence := range splitOversized(line, ". ", max) {
+			units = append(units, splitOversized(sentence, " ", max)...)
+		}
+	}
+
+	var pieces []string
+	var current strings.Builder
+	for _, u := range units {
+		if current.Len() > 0 && utf8.RuneCountInString(current.String())+utf8.RuneCountInString(u) > max {
+			pieces = append(pieces, strings.TrimSpace(current.String()))
+			current.Reset()
+		}
+		current.WriteString(u)
+	}
+	if strings.TrimSpace(current.String()) != "" {
+		pieces = append(pieces, strings.TrimSpace(current.String()))
+	}
+	return pieces
+}
+
+// splitOversized splits s after each sep, but only if s is over max.
+func splitOversized(s, sep string, max int) []string {
+	if utf8.RuneCountInString(s) <= max {
+		return []string{s}
+	}
+	return strings.SplitAfter(s, sep)
 }
 
 func readJSONL[T any](filePath string, fn func(T) error) error {

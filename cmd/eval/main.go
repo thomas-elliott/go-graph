@@ -43,18 +43,22 @@ type method func(ctx context.Context, query string) ([]string, error)
 func main() {
 	path := flag.String("questions", "eval/questions.jsonl", "questions file")
 	name := flag.String("method", "text", "retrieval method: text, vector, hybrid or walk")
-	seeds := flag.Int("seeds", 10, "vector hits the walk starts from")
+	var walk walkConfig
+	flag.IntVar(&walk.seeds, "seeds", 10, "walk: vector hits the walk starts from")
+	flag.Float64Var(&walk.minSimilarity, "min-similarity", 0, "walk: only walk from seeds at least this similar")
+	flag.BoolVar(&walk.links, "links", false, "walk: also follow link edges from each seed's destination")
+	flag.BoolVar(&walk.fuse, "fuse", false, "walk: fuse the walk's ranking with plain vector search")
 	limit := flag.Int("limit", 200, "hits to fetch per question")
 	show := flag.String("show", "", "list one question's ranked hits instead of scoring, e.g. nz-039")
 	flag.Parse()
 
-	if err := run(context.Background(), *path, *name, *limit, *seeds, *show); err != nil {
+	if err := run(context.Background(), *path, *name, *limit, walk, *show); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, path, name string, limit, seeds int, show string) error {
+func run(ctx context.Context, path, name string, limit int, walk walkConfig, show string) error {
 	questions, err := readQuestions(path)
 	if err != nil {
 		return err
@@ -66,7 +70,7 @@ func run(ctx context.Context, path, name string, limit, seeds int, show string) 
 	}
 	defer store.Close()
 
-	search, err := pickMethod(store, name, limit, seeds)
+	search, err := pickMethod(store, name, limit, walk)
 	if err != nil {
 		return err
 	}
@@ -103,7 +107,7 @@ func run(ctx context.Context, path, name string, limit, seeds int, show string) 
 	return nil
 }
 
-func pickMethod(store *pggraph.Store, name string, limit, seeds int) (method, error) {
+func pickMethod(store *pggraph.Store, name string, limit int, walk walkConfig) (method, error) {
 	text := func(ctx context.Context, query string) ([]string, error) {
 		hits, err := store.SearchAnyWord(ctx, query, limit)
 		return hitIDs(hits), err
@@ -154,24 +158,49 @@ func pickMethod(store *pggraph.Store, name string, limit, seeds int) (method, er
 			if err != nil {
 				return nil, err
 			}
-			hits, err := store.VectorSearch(ctx, client.Model, v, seeds)
+			seeds, err := store.VectorSearch(ctx, client.Model, v, walk.seeds)
 			if err != nil {
 				return nil, err
 			}
-			candidates, err := neighbourhood(ctx, store, hitIDs(hits))
+			var walkFrom []string
+			for _, h := range seeds {
+				if h.Rank >= walk.minSimilarity {
+					walkFrom = append(walkFrom, h.ID)
+				}
+			}
+			candidates, err := neighbourhood(ctx, store, walkFrom, walk.links)
 			if err != nil {
 				return nil, err
 			}
-			hits, err = store.VectorSearchWithin(ctx, client.Model, v, candidates, limit)
-			return hitIDs(hits), err
+			candidates = append(candidates, hitIDs(seeds)...)
+			hits, err := store.VectorSearchWithin(ctx, client.Model, v, candidates, limit)
+			if err != nil || !walk.fuse {
+				return hitIDs(hits), err
+			}
+
+			plain, err := store.VectorSearch(ctx, client.Model, v, limit)
+			if err != nil {
+				return nil, err
+			}
+			fused := fuse(hitIDs(hits), hitIDs(plain))
+			return fused[:min(limit, len(fused))], nil
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown method %q", name)
 }
 
+// walkConfig is to configure variations of a walk.
+type walkConfig struct {
+	seeds         int
+	minSimilarity float64
+	links         bool
+	fuse          bool
+}
+
 // neighbourhood returns the seeds plus the chunks and POIs of each seed's
-// destination, its part_of parent, and the destinations part_of it.
-func neighbourhood(ctx context.Context, g graph.Graph, seeds []string) ([]string, error) {
+// destination, its part_of parent, the destinations part_of it, and with
+// links, the destinations it links to.
+func neighbourhood(ctx context.Context, g graph.Graph, seeds []string, links bool) ([]string, error) {
 	found := map[string]bool{}
 	add := func(ids ...string) {
 		for _, id := range ids {
@@ -203,6 +232,13 @@ func neighbourhood(ctx context.Context, g graph.Graph, seeds []string) ([]string
 			region = append(region, dest)
 			region = append(region, up...)
 			region = append(region, down...)
+			if links {
+				linked, err := g.Neighbours(ctx, dest, graph.Out, "link")
+				if err != nil {
+					return nil, err
+				}
+				region = append(region, linked...)
+			}
 		}
 
 		for _, dest := range region {

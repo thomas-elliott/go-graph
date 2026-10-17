@@ -10,7 +10,10 @@ import (
 	"github.com/thomas-elliott/go-graph/pggraph"
 )
 
-const batchSize = 32
+const (
+	pageSize  = 1000 // nodes per cache lookup and save
+	batchSize = 32   // texts per embedding request
+)
 
 func main() {
 	if err := run(context.Background()); err != nil {
@@ -39,7 +42,7 @@ func run(ctx context.Context) error {
 	done, fromCache := 0, 0
 	after := ""
 	for {
-		nodes, err := store.Unembedded(ctx, after, batchSize)
+		nodes, err := store.Unembedded(ctx, after, pageSize)
 		if err != nil {
 			return err
 		}
@@ -65,7 +68,7 @@ func run(ctx context.Context) error {
 		done += len(nodes)
 		fromCache += hits
 		after = nodes[len(nodes)-1].ID
-		if done%(batchSize*100) == 0 {
+		if done%(pageSize*10) == 0 {
 			fmt.Printf("embedded %d nodes (%d from cache) in %s\n", done, fromCache, time.Since(start).Round(time.Second))
 		}
 	}
@@ -91,15 +94,16 @@ func vectorsFor(ctx context.Context, client *embed.Client, store *pggraph.Store,
 			missingHashes = append(missingHashes, h)
 		}
 	}
-	if len(missingTexts) > 0 {
-		fetched, err := client.Embed(ctx, missingTexts)
+	for start := 0; start < len(missingTexts); start += batchSize {
+		end := min(start+batchSize, len(missingTexts))
+		fetched, err := client.Embed(ctx, missingTexts[start:end])
 		if err != nil {
 			return nil, 0, err
 		}
-		if err := store.CacheEmbeddings(ctx, client.Model, client.Dims, missingHashes, fetched); err != nil {
+		if err := store.CacheEmbeddings(ctx, client.Model, client.Dims, missingHashes[start:end], fetched); err != nil {
 			return nil, 0, err
 		}
-		for j, h := range missingHashes {
+		for j, h := range missingHashes[start:end] {
 			cached[h] = fetched[j]
 		}
 	}
