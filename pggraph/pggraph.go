@@ -227,3 +227,17 @@ func (s *Store) Close() error {
 	}
 	return db.Close()
 }
+
+// EdgesAmong returns the edges whose ends are both in ids.
+func (s *Store) EdgesAmong(ctx context.Context, ids []string) ([]graph.Edge, error) {
+	var rows []edgeRow
+	err := s.db.WithContext(ctx).Raw(`
+		SELECT id, from_id, to_id, type
+		FROM edges
+		WHERE from_id IN ? AND to_id IN ?`, ids, ids).Scan(&rows).Error
+	edges := make([]graph.Edge, len(rows))
+	for i, r := range rows {
+		edges[i] = graph.Edge{ID: r.ID, From: r.From, To: r.To, Type: r.Type}
+	}
+	return edges, err
+}

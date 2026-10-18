@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"maps"
+	"math"
 	"os"
 	"slices"
 	"strings"
@@ -16,7 +16,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/thomas-elliott/go-graph/embed"
-	"github.com/thomas-elliott/go-graph/graph"
 	"github.com/thomas-elliott/go-graph/pggraph"
 )
 
@@ -48,6 +47,7 @@ func main() {
 	flag.Float64Var(&walk.minSimilarity, "min-similarity", 0, "walk: only walk from seeds at least this similar")
 	flag.BoolVar(&walk.links, "links", false, "walk: also follow link edges from each seed's destination")
 	flag.BoolVar(&walk.fuse, "fuse", false, "walk: fuse the walk's ranking with plain vector search")
+	flag.StringVar(&walk.rank, "rank", "similarity", "walk: rank candidates by similarity, decay or pagerank")
 	limit := flag.Int("limit", 200, "hits to fetch per question")
 	show := flag.String("show", "", "list one question's ranked hits instead of scoring, e.g. nz-039")
 	flag.Parse()
@@ -153,105 +153,9 @@ func pickMethod(store *pggraph.Store, name string, limit int, walk walkConfig) (
 			return fused[:min(limit, len(fused))], nil
 		}, nil
 	case "walk":
-		return func(ctx context.Context, query string) ([]string, error) {
-			v, err := embedQuery(ctx, query)
-			if err != nil {
-				return nil, err
-			}
-			seeds, err := store.VectorSearch(ctx, client.Model, v, walk.seeds)
-			if err != nil {
-				return nil, err
-			}
-			var walkFrom []string
-			for _, h := range seeds {
-				if h.Rank >= walk.minSimilarity {
-					walkFrom = append(walkFrom, h.ID)
-				}
-			}
-			candidates, err := neighbourhood(ctx, store, walkFrom, walk.links)
-			if err != nil {
-				return nil, err
-			}
-			candidates = append(candidates, hitIDs(seeds)...)
-			hits, err := store.VectorSearchWithin(ctx, client.Model, v, candidates, limit)
-			if err != nil || !walk.fuse {
-				return hitIDs(hits), err
-			}
-
-			plain, err := store.VectorSearch(ctx, client.Model, v, limit)
-			if err != nil {
-				return nil, err
-			}
-			fused := fuse(hitIDs(hits), hitIDs(plain))
-			return fused[:min(limit, len(fused))], nil
-		}, nil
+		return walkMethod(store, client.Model, embedQuery, walk, limit)
 	}
 	return nil, fmt.Errorf("unknown method %q", name)
-}
-
-// walkConfig is to configure variations of a walk.
-type walkConfig struct {
-	seeds         int
-	minSimilarity float64
-	links         bool
-	fuse          bool
-}
-
-// neighbourhood returns the seeds plus the chunks and POIs of each seed's
-// destination, its part_of parent, the destinations part_of it, and with
-// links, the destinations it links to.
-func neighbourhood(ctx context.Context, g graph.Graph, seeds []string, links bool) ([]string, error) {
-	found := map[string]bool{}
-	add := func(ids ...string) {
-		for _, id := range ids {
-			found[id] = true
-		}
-	}
-	add(seeds...)
-
-	for _, seed := range seeds {
-		var dests []string
-		for _, typ := range []string{"has_chunk", "has_poi"} {
-			parents, err := g.Neighbours(ctx, seed, graph.In, typ)
-			if err != nil {
-				return nil, err
-			}
-			dests = append(dests, parents...)
-		}
-
-		var region []string
-		for _, dest := range dests {
-			up, err := g.Neighbours(ctx, dest, graph.Out, "part_of")
-			if err != nil {
-				return nil, err
-			}
-			down, err := g.Neighbours(ctx, dest, graph.In, "part_of")
-			if err != nil {
-				return nil, err
-			}
-			region = append(region, dest)
-			region = append(region, up...)
-			region = append(region, down...)
-			if links {
-				linked, err := g.Neighbours(ctx, dest, graph.Out, "link")
-				if err != nil {
-					return nil, err
-				}
-				region = append(region, linked...)
-			}
-		}
-
-		for _, dest := range region {
-			for _, typ := range []string{"has_chunk", "has_poi"} {
-				children, err := g.Neighbours(ctx, dest, graph.Out, typ)
-				if err != nil {
-					return nil, err
-				}
-				add(children...)
-			}
-		}
-	}
-	return slices.Collect(maps.Keys(found)), nil
 }
 
 // fuse merges rankings with reciprocal rank fusion.
@@ -397,7 +301,7 @@ func printQuestion(r result) {
 
 func printSummary(name string, results []result) {
 	fmt.Printf("method: %s   budgets: %v tokens\n", name, budgets)
-	fmt.Printf("%-10s %3s  %-17s  %-9s  %-9s  %s\n", "type", "n", "recall", "found", "first hit", "search time")
+	fmt.Printf("%-10s %3s  %-17s  %-9s  %-9s  %s\n", "type", "n", "recall", "found", "first hit", "search p50 / p95")
 
 	groups := map[string][]result{}
 	for _, r := range results {
@@ -427,10 +331,11 @@ func printGroup(name string, rs []result) {
 
 	first := "-"
 	if len(firstHits) > 0 {
-		first = fmt.Sprint(median(firstHits))
+		first = fmt.Sprint(percentile(firstHits, 0.5))
 	}
-	fmt.Printf("%-10s %3d  %s  %3d of %-3d  %9s  %s\n",
-		name, len(rs), recallCells(recall), len(firstHits), len(rs), first, median(times).Round(time.Millisecond))
+	fmt.Printf("%-10s %3d  %s  %3d of %-3d  %9s  %s / %s\n",
+		name, len(rs), recallCells(recall), len(firstHits), len(rs), first,
+		percentile(times, 0.5).Round(time.Millisecond), percentile(times, 0.95).Round(time.Millisecond))
 }
 
 func recallCells(recall []float64) string {
@@ -444,8 +349,9 @@ func recallCells(recall []float64) string {
 	return s
 }
 
-func median[T int | time.Duration](xs []T) T {
+// percentile uses the nearest-rank method: the smallest value with at least p of xs at or below it.
+func percentile[T int | time.Duration](xs []T, p float64) T {
 	sorted := slices.Clone(xs)
 	slices.Sort(sorted)
-	return sorted[len(sorted)/2]
+	return sorted[max(int(math.Ceil(p*float64(len(sorted))))-1, 0)]
 }
