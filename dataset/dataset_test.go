@@ -26,3 +26,11 @@ func TestSplitText(t *testing.T) {
 		t.Error("pieces lost or reordered text")
 	}
 }
+
+func TestStripJSON(t *testing.T) {
+	text := "Cycle the towpath.\n{\"type\": \"Feature\",\n\"geometry\": {\"coordinates\": [[1,2],[3,4]]}}\n{not json} stays.\n"
+	want := "Cycle the towpath.\n\n{not json} stays.\n"
+	if got := stripJSON(text); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

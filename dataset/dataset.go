@@ -72,8 +72,12 @@ func chunks(n nodeLine) ([]graph.Node, []graph.Edge) {
 	var edges []graph.Edge
 	var previousID string
 	for i, s := range n.Sections {
-		pieces := splitText(s.Text, maxChunkChars)
-		for j, text := range pieces {
+		text := stripJSON(s.Text)
+		if strings.TrimSpace(text) == "" {
+			continue
+		}
+		pieces := splitText(text, maxChunkChars)
+		for j, piece := range pieces {
 			id := fmt.Sprintf("chunk:%s#%d", n.ID, i)
 			if len(pieces) > 1 {
 				id = fmt.Sprintf("%s.%d", id, j)
@@ -82,7 +86,7 @@ func chunks(n nodeLine) ([]graph.Node, []graph.Edge) {
 				ID:     id,
 				Labels: []string{"chunk"},
 				// dest matches the POI property, so search can treat both alike.
-				Properties: map[string]any{"dest": n.ID, "heading": s.Heading, "text": text},
+				Properties: map[string]any{"dest": n.ID, "heading": s.Heading, "text": piece},
 			})
 			edges = append(edges, graph.Edge{From: n.ID, To: id, Type: "has_chunk"})
 			if previousID != "" {
@@ -92,6 +96,23 @@ func chunks(n nodeLine) ([]graph.Node, []graph.Edge) {
 		}
 	}
 	return nodes, edges
+}
+
+// stripJSON removes JSON objects that start a line, to avoid GeoJSON being embedded.
+func stripJSON(text string) string {
+	var out strings.Builder
+	for i := 0; i < len(text); i++ {
+		if text[i] == '{' && (i == 0 || text[i-1] == '\n') {
+			var object map[string]any
+			decoder := json.NewDecoder(strings.NewReader(text[i:]))
+			if decoder.Decode(&object) == nil {
+				i += int(decoder.InputOffset()) - 1
+				continue
+			}
+		}
+		out.WriteByte(text[i])
+	}
+	return out.String()
 }
 
 // splitText packs text into pieces of at most max characters.

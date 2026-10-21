@@ -12,7 +12,7 @@ import (
 
 const (
 	pageSize  = 1000 // nodes per cache lookup and save
-	batchSize = 32   // texts per embedding request
+	batchSize = 8    // texts per embedding request
 )
 
 func main() {
