@@ -14,9 +14,10 @@ Pre-requisites:
 
 # Quick Start
 
-Create the local db (needs docker), load the sample data, run the example query: 
+Install go and just (via mise), create the local db (needs docker), load the sample data, run the example query:
 
 ```
+mise install
 just db-up
 just load
 just dev
@@ -58,14 +59,6 @@ memory: around chunk:Bruges#2: [{chunk:Bruges#2 0}]
 postgres: part of Belgium: [Brussels Flanders Wallonia]
 postgres: around chunk:Bruges#2: [{chunk:Bruges#2 0}]
 ```
-
-# Quick Start
-
-`mise install`
-
-`just db-up`
-
-`just dev`
 
 # Architecture
 
