@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pgvector/pgvector-go"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/thomas-elliott/go-graph/graph"
@@ -67,8 +68,40 @@ func (s *Store) SaveEmbeddings(ctx context.Context, model string, ids []string, 
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(&rows).Error
 }
 
-// VectorSearch returns up to limit node IDs, by cosine distance.
+// CreateVectorIndex builds the HNSW index VectorSearch uses, unless it exists.
+func (s *Store) CreateVectorIndex(ctx context.Context, dims int) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// The 64MB default spills to disk and makes the full-set build much slower.
+		if err := tx.Exec("SET LOCAL maintenance_work_mem = '2GB'").Error; err != nil {
+			return err
+		}
+		return tx.Exec(fmt.Sprintf(`
+			CREATE INDEX IF NOT EXISTS embeddings_hnsw_idx ON embeddings
+			USING hnsw ((embedding::vector(%d)) vector_cosine_ops)`, dims)).Error
+	})
+}
+
+// VectorSearch returns up to limit node IDs by cosine distance, approximately, using the HNSW index.
 func (s *Store) VectorSearch(ctx context.Context, model string, query []float32, limit int) ([]Hit, error) {
+	var hits []Hit
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// HNSW returns at most ef_search rows; twice the limit finds about 96% of the exact hits.
+		if err := tx.Exec("SELECT set_config('hnsw.ef_search', ?, true)", fmt.Sprint(max(2*limit, 100))).Error; err != nil {
+			return err
+		}
+		// The cast must match the index expression, or Postgres scans every row.
+		return tx.Raw(fmt.Sprintf(`
+			SELECT node_id AS id, 1 - (embedding::vector(%[1]d) <=> ?) AS rank
+			FROM embeddings
+			WHERE model = ?
+			ORDER BY embedding::vector(%[1]d) <=> ?
+			LIMIT ?`, len(query)), pgvector.NewVector(query), model, pgvector.NewVector(query), limit).Scan(&hits).Error
+	})
+	return hits, err
+}
+
+// ExactVectorSearch is VectorSearch without the index: slower, but the reference for what the index misses.
+func (s *Store) ExactVectorSearch(ctx context.Context, model string, query []float32, limit int) ([]Hit, error) {
 	var hits []Hit
 	err := s.db.WithContext(ctx).Raw(`
 		SELECT node_id AS id, 1 - (embedding <=> ?) AS rank

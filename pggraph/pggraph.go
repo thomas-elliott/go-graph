@@ -62,8 +62,11 @@ func Open(ctx context.Context, dsn string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
-// Clear deletes every node, edge and embedding.
+// Clear deletes every node, edge and embedding, and drops the vector index so reloads don't update it row by row.
 func (s *Store) Clear(ctx context.Context) error {
+	if err := s.db.WithContext(ctx).Exec("DROP INDEX IF EXISTS embeddings_hnsw_idx").Error; err != nil {
+		return err
+	}
 	return s.db.WithContext(ctx).Exec("TRUNCATE nodes, edges, embeddings RESTART IDENTITY").Error
 }
 

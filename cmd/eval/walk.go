@@ -21,18 +21,18 @@ type walkConfig struct {
 	rank          string
 }
 
+// vectorSearcher is Store.VectorSearch or Store.ExactVectorSearch.
+type vectorSearcher func(ctx context.Context, model string, query []float32, limit int) ([]pggraph.Hit, error)
+
 // walkMethod seeds a walk with vector hits, then ranks the nodes it reaches.
-func walkMethod(store *pggraph.Store, model string, embedQuery func(context.Context, string) ([]float32, error), cfg walkConfig, limit int) (method, error) {
+func walkMethod(store *pggraph.Store, model string, vectorSearch vectorSearcher, cfg walkConfig, limit int) (method, error) {
 	if !slices.Contains([]string{"similarity", "decay", "pagerank"}, cfg.rank) {
 		return nil, fmt.Errorf("unknown rank %q", cfg.rank)
 	}
 
-	return func(ctx context.Context, query string) ([]string, error) {
-		v, err := embedQuery(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-		seeds, err := store.VectorSearch(ctx, model, v, cfg.seeds)
+	return func(ctx context.Context, q query) ([]string, error) {
+		v := q.vector
+		seeds, err := vectorSearch(ctx, model, v, cfg.seeds)
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func walkMethod(store *pggraph.Store, model string, embedQuery func(context.Cont
 			return ranked, nil
 		}
 
-		plain, err := store.VectorSearch(ctx, model, v, limit)
+		plain, err := vectorSearch(ctx, model, v, limit)
 		if err != nil {
 			return nil, err
 		}

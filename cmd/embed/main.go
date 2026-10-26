@@ -73,6 +73,12 @@ func run(ctx context.Context) error {
 		}
 	}
 	fmt.Printf("embedded %d nodes (%d from cache) in %s\n", done, fromCache, time.Since(start).Round(time.Second))
+
+	start = time.Now()
+	if err := store.CreateVectorIndex(ctx, client.Dims); err != nil {
+		return err
+	}
+	fmt.Printf("vector index ready in %s\n", time.Since(start).Round(time.Second))
 	return nil
 }
 

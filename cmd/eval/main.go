@@ -30,14 +30,24 @@ type question struct {
 
 // result is one question's score for one method.
 type result struct {
-	question question
-	recall   []float64
-	firstHit int
-	took     time.Duration
+	question  question
+	recall    []float64
+	firstHit  int
+	took      time.Duration
+	embedTook time.Duration
+}
+
+// query is a question's text, with its embedding when the method needs one.
+type query struct {
+	text   string
+	vector []float32
 }
 
 // method ranks node IDs for a question, best first.
-type method func(ctx context.Context, query string) ([]string, error)
+type method func(ctx context.Context, q query) ([]string, error)
+
+// embedder turns a question into a vector.
+type embedder func(ctx context.Context, text string) ([]float32, error)
 
 func main() {
 	path := flag.String("questions", "eval/questions.jsonl", "questions file")
@@ -49,16 +59,17 @@ func main() {
 	flag.BoolVar(&walk.fuse, "fuse", false, "walk: fuse the walk's ranking with plain vector search")
 	flag.StringVar(&walk.rank, "rank", "similarity", "walk: rank candidates by similarity, decay or pagerank")
 	limit := flag.Int("limit", 200, "hits to fetch per question")
+	exact := flag.Bool("exact", false, "vector search every row instead of using the index")
 	show := flag.String("show", "", "list one question's ranked hits instead of scoring, e.g. nz-039")
 	flag.Parse()
 
-	if err := run(context.Background(), *path, *name, *limit, walk, *show); err != nil {
+	if err := run(context.Background(), *path, *name, *limit, *exact, walk, *show); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, path, name string, limit int, walk walkConfig, show string) error {
+func run(ctx context.Context, path, name string, limit int, exact bool, walk walkConfig, show string) error {
 	questions, err := readQuestions(path)
 	if err != nil {
 		return err
@@ -70,9 +81,19 @@ func run(ctx context.Context, path, name string, limit int, walk walkConfig, sho
 	}
 	defer store.Close()
 
-	search, err := pickMethod(store, name, limit, walk)
+	search, embedQuery, err := pickMethod(store, name, limit, exact, walk)
 	if err != nil {
 		return err
+	}
+
+	// ask embeds the question before searching, so search time covers only the method's own work.
+	ask := func(text string) (query, time.Duration, error) {
+		if embedQuery == nil {
+			return query{text: text}, 0, nil
+		}
+		start := time.Now()
+		v, err := embedQuery(ctx, text)
+		return query{text: text, vector: v}, time.Since(start), err
 	}
 
 	tokens := tokenCounter(store)
@@ -81,13 +102,32 @@ func run(ctx context.Context, path, name string, limit int, walk walkConfig, sho
 		if i < 0 {
 			return fmt.Errorf("no question %q", show)
 		}
-		return showHits(ctx, questions[i], search, tokens)
+		in, _, err := ask(questions[i].Question)
+		if err != nil {
+			return err
+		}
+		return showHits(ctx, questions[i], in, search, tokens)
+	}
+
+	// Warm-up pass, so timings measure a warm cache rather than whatever Docker last evicted.
+	for _, q := range questions {
+		in, _, err := ask(q.Question)
+		if err != nil {
+			return fmt.Errorf("%s: %w", q.ID, err)
+		}
+		if _, err := search(ctx, in); err != nil {
+			return fmt.Errorf("%s: %w", q.ID, err)
+		}
 	}
 
 	var results []result
 	for _, q := range questions {
+		in, embedTook, err := ask(q.Question)
+		if err != nil {
+			return fmt.Errorf("%s: %w", q.ID, err)
+		}
 		start := time.Now()
-		ranked, err := search(ctx, q.Question)
+		ranked, err := search(ctx, in)
 		took := time.Since(start)
 		if err != nil {
 			return fmt.Errorf("%s: %w", q.ID, err)
@@ -98,6 +138,7 @@ func run(ctx context.Context, path, name string, limit int, walk walkConfig, sho
 			return fmt.Errorf("%s: %w", q.ID, err)
 		}
 		r.took = took
+		r.embedTook = embedTook
 		results = append(results, r)
 		printQuestion(r)
 	}
@@ -107,55 +148,56 @@ func run(ctx context.Context, path, name string, limit int, walk walkConfig, sho
 	return nil
 }
 
-func pickMethod(store *pggraph.Store, name string, limit int, walk walkConfig) (method, error) {
-	text := func(ctx context.Context, query string) ([]string, error) {
-		hits, err := store.SearchAnyWord(ctx, query, limit)
+func pickMethod(store *pggraph.Store, name string, limit int, exact bool, walk walkConfig) (method, embedder, error) {
+	text := func(ctx context.Context, q query) ([]string, error) {
+		hits, err := store.SearchAnyWord(ctx, q.text, limit)
 		return hitIDs(hits), err
 	}
 	if name == "text" {
-		return text, nil
+		return text, nil, nil
 	}
 
 	client, err := embed.FromEnv()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	embedQuery := func(ctx context.Context, query string) ([]float32, error) {
-		vectors, err := client.Embed(ctx, []string{query})
+	embedQuery := func(ctx context.Context, text string) ([]float32, error) {
+		vectors, err := client.Embed(ctx, []string{text})
 		if err != nil {
 			return nil, err
 		}
 		return vectors[0], nil
 	}
-	vector := func(ctx context.Context, query string) ([]string, error) {
-		v, err := embedQuery(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-		hits, err := store.VectorSearch(ctx, client.Model, v, limit)
+	vectorSearch := store.VectorSearch
+	if exact {
+		vectorSearch = store.ExactVectorSearch
+	}
+	vector := func(ctx context.Context, q query) ([]string, error) {
+		hits, err := vectorSearch(ctx, client.Model, q.vector, limit)
 		return hitIDs(hits), err
 	}
 
 	switch name {
 	case "vector":
-		return vector, nil
+		return vector, embedQuery, nil
 	case "hybrid":
-		return func(ctx context.Context, query string) ([]string, error) {
-			textIDs, err := text(ctx, query)
+		return func(ctx context.Context, q query) ([]string, error) {
+			textIDs, err := text(ctx, q)
 			if err != nil {
 				return nil, err
 			}
-			vectorIDs, err := vector(ctx, query)
+			vectorIDs, err := vector(ctx, q)
 			if err != nil {
 				return nil, err
 			}
 			fused := fuse(textIDs, vectorIDs)
 			return fused[:min(limit, len(fused))], nil
-		}, nil
+		}, embedQuery, nil
 	case "walk":
-		return walkMethod(store, client.Model, embedQuery, walk, limit)
+		search, err := walkMethod(store, client.Model, vectorSearch, walk, limit)
+		return search, embedQuery, err
 	}
-	return nil, fmt.Errorf("unknown method %q", name)
+	return nil, nil, fmt.Errorf("unknown method %q", name)
 }
 
 // fuse merges rankings with reciprocal rank fusion.
@@ -237,8 +279,8 @@ func score(ctx context.Context, q question, ranked []string, tokens func(context
 }
 
 // showHits prints the results and ranking from a question, for debugging
-func showHits(ctx context.Context, q question, search method, tokens func(context.Context, string) (int, error)) error {
-	ranked, err := search(ctx, q.Question)
+func showHits(ctx context.Context, q question, in query, search method, tokens func(context.Context, string) (int, error)) error {
+	ranked, err := search(ctx, in)
 	if err != nil {
 		return err
 	}
@@ -295,13 +337,13 @@ func printQuestion(r result) {
 	if r.firstHit > 0 {
 		first = fmt.Sprint(r.firstHit)
 	}
-	fmt.Printf("%-8s %-10s recall %s  first hit %4s  %6s\n",
-		r.question.ID, r.question.Type, recallCells(r.recall), first, r.took.Round(time.Millisecond))
+	fmt.Printf("%-8s %-10s recall %s  first hit %4s  search %6s  embed %6s\n",
+		r.question.ID, r.question.Type, recallCells(r.recall), first, r.took.Round(time.Millisecond), r.embedTook.Round(time.Millisecond))
 }
 
 func printSummary(name string, results []result) {
 	fmt.Printf("method: %s   budgets: %v tokens\n", name, budgets)
-	fmt.Printf("%-10s %3s  %-17s  %-9s  %-9s  %s\n", "type", "n", "recall", "found", "first hit", "search p50 / p95")
+	fmt.Printf("%-10s %3s  %-17s  %-9s  %-9s  %s\n", "type", "n", "recall", "found", "first hit", "search p50 / p95   embed p50")
 
 	groups := map[string][]result{}
 	for _, r := range results {
@@ -318,7 +360,7 @@ func printSummary(name string, results []result) {
 func printGroup(name string, rs []result) {
 	recall := make([]float64, len(budgets))
 	var firstHits []int
-	var times []time.Duration
+	var times, embedTimes []time.Duration
 	for _, r := range rs {
 		for b := range budgets {
 			recall[b] += r.recall[b] / float64(len(rs))
@@ -327,15 +369,17 @@ func printGroup(name string, rs []result) {
 			firstHits = append(firstHits, r.firstHit)
 		}
 		times = append(times, r.took)
+		embedTimes = append(embedTimes, r.embedTook)
 	}
 
 	first := "-"
 	if len(firstHits) > 0 {
 		first = fmt.Sprint(percentile(firstHits, 0.5))
 	}
-	fmt.Printf("%-10s %3d  %s  %3d of %-3d  %9s  %s / %s\n",
+	fmt.Printf("%-10s %3d  %s  %3d of %-3d  %9s  %s / %s   %s\n",
 		name, len(rs), recallCells(recall), len(firstHits), len(rs), first,
-		percentile(times, 0.5).Round(time.Millisecond), percentile(times, 0.95).Round(time.Millisecond))
+		percentile(times, 0.5).Round(time.Millisecond), percentile(times, 0.95).Round(time.Millisecond),
+		percentile(embedTimes, 0.5).Round(time.Millisecond))
 }
 
 func recallCells(recall []float64) string {

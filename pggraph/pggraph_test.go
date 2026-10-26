@@ -112,6 +112,9 @@ func TestStore_Embeddings(t *testing.T) {
 	if err := s.SaveEmbeddings(ctx, "m", []string{"poi:Bruges#0"}, [][]float32{{-1, 0}}); err != nil {
 		t.Fatal(err)
 	}
+	if err := s.CreateVectorIndex(ctx, 2); err != nil {
+		t.Fatal(err)
+	}
 	hits, err := s.VectorSearch(ctx, "m", []float32{-1, 0.1}, 10)
 	if err != nil {
 		t.Fatal(err)

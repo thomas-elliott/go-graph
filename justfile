@@ -47,3 +47,6 @@ db-down:
 
 db-psql:
     docker compose exec db psql -U graph graph
+
+eval method="text" *args:
+    go run ./cmd/eval -method {{method}} {{args}}
