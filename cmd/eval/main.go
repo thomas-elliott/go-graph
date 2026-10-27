@@ -22,10 +22,27 @@ import (
 var budgets = []int{1000, 2000, 4000}
 
 type question struct {
-	ID       string   `json:"id"`
-	Type     string   `json:"type"`
-	Question string   `json:"question"`
-	Relevant []string `json:"relevant"`
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Question string `json:"question"`
+	Parts    []part `json:"parts"`
+}
+
+// part is one piece of a good answer; returning any of its nodes finds it.
+type part struct {
+	Part  string   `json:"part"`
+	Nodes []string `json:"nodes"`
+}
+
+// partsOf returns the indexes of the parts a node gives.
+func (q question) partsOf(id string) []int {
+	var found []int
+	for i, p := range q.Parts {
+		if slices.Contains(p.Nodes, id) {
+			found = append(found, i)
+		}
+	}
+	return found
 }
 
 // result is one question's score for one method.
@@ -252,14 +269,15 @@ func score(ctx context.Context, q question, ranked []string, tokens func(context
 	r := result{question: q, recall: make([]float64, len(budgets))}
 
 	for i, id := range ranked {
-		if slices.Contains(q.Relevant, id) {
+		if len(q.partsOf(id)) > 0 {
 			r.firstHit = i + 1
 			break
 		}
 	}
 
 	for b, budget := range budgets {
-		used, found := 0, 0
+		used := 0
+		found := map[int]bool{}
 		for _, id := range ranked {
 			n, err := tokens(ctx, id)
 			if err != nil {
@@ -269,11 +287,11 @@ func score(ctx context.Context, q question, ranked []string, tokens func(context
 				break
 			}
 			used += n
-			if slices.Contains(q.Relevant, id) {
-				found++
+			for _, p := range q.partsOf(id) {
+				found[p] = true
 			}
 		}
-		r.recall[b] = float64(found) / float64(len(q.Relevant))
+		r.recall[b] = float64(len(found)) / float64(len(q.Parts))
 	}
 	return r, nil
 }
@@ -285,7 +303,10 @@ func showHits(ctx context.Context, q question, in query, search method, tokens f
 		return err
 	}
 	fmt.Printf("%s (%s): %s\n", q.ID, q.Type, q.Question)
-	fmt.Printf("labelled: %v\n\n", q.Relevant)
+	for i, p := range q.Parts {
+		fmt.Printf("  p%d %s: %v\n", i+1, p.Part, p.Nodes)
+	}
+	fmt.Println()
 
 	used, b := 0, 0
 	for i, id := range ranked {
@@ -300,11 +321,11 @@ func showHits(ctx context.Context, q question, in query, search method, tokens f
 		if err != nil {
 			return err
 		}
-		mark := " "
-		if slices.Contains(q.Relevant, id) {
-			mark = "*"
+		var mark []string
+		for _, p := range q.partsOf(id) {
+			mark = append(mark, fmt.Sprintf("p%d", p+1))
 		}
-		fmt.Printf("%4d %s %5d  %s\n", i+1, mark, n, id)
+		fmt.Printf("%4d %-6s %5d  %s\n", i+1, strings.Join(mark, ","), n, id)
 		used += n
 	}
 	return nil
